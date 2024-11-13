@@ -21,5 +21,5 @@ export const SLOT_ITEMS: SlotItem[] = [
   { multiplier: 0.5, image: IMAGE_WOJAK },
 ];
 
-export const NUM_SLOTS = 3;
+export const NUM_SLOTS = 10;
 export const SPIN_DELAY = 500;

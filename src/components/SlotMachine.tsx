@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import Slot from './Slot';
+import SlotItem from './SlotItem';
 import { useSound } from '../hooks/useSound';
 import { SLOT_ITEMS, NUM_SLOTS } from '../constants';
+import { getSlotCombination, calculatePayout } from '../utils/utils';
 
-const Slots: React.FC = () => {
+const SlotMachine: React.FC = () => {
   const [spinning, setSpinning] = useState(false);
   const [displayedCombination, setDisplayedCombination] = useState(
     Array(NUM_SLOTS).fill(SLOT_ITEMS[0])
   );
+  const [points, setPoints] = useState(0); // Points state
   const playSound = useSound();
 
   const spinSlots = () => {
@@ -15,30 +17,40 @@ const Slots: React.FC = () => {
     setSpinning(true);
     playSound('spin');
 
-    // Start an interval to update `displayedCombination` with random images
     const spinInterval = setInterval(() => {
-      const newCombination = Array.from({ length: NUM_SLOTS }).map(() => {
-        const randomItem = SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)];
-        return { ...randomItem }; // Ensure a new object reference for each item
-      });
+      const newCombination = getSlotCombination(NUM_SLOTS);
       setDisplayedCombination(newCombination);
-      console.log("Spinning Combination:", newCombination); // Log each update
-    }, 100); // Adjust speed for flickering effect
+    }, 100);
 
-    // Stop spinning after a certain duration
     setTimeout(() => {
       clearInterval(spinInterval);
       setSpinning(false);
-      playSound('reveal');
-    }, 2000); // Spin duration (2 seconds here)
+
+      const finalCombination = getSlotCombination(NUM_SLOTS);
+      setDisplayedCombination(finalCombination);
+
+      const payoutMultiplier = calculatePayout(finalCombination);
+
+      if (payoutMultiplier > 0) {
+        console.log(`You win! Payout multiplier: ${payoutMultiplier}x`);
+        playSound('win');
+        setPoints(prevPoints => prevPoints + payoutMultiplier * 10); // Update points
+      } else {
+        console.log("No win. Better luck next time!");
+        playSound('lose');
+      }
+    }, 2000);
   };
 
   return (
     <div className="slot-game">
+      <div className="score-board">
+        <h2>Points: {points}</h2>
+      </div>
       <button onClick={spinSlots} disabled={spinning}>Spin</button>
       <div className="slots">
         {displayedCombination.map((item, index) => (
-          <Slot
+          <SlotItem
             key={index}
             revealed={true} 
             good={false} 
@@ -50,4 +62,4 @@ const Slots: React.FC = () => {
   );
 };
 
-export default Slots;
+export default SlotMachine;

@@ -127,4 +127,13 @@ export const StyledSlots = styled.div`
     gap: 10px;
     margin-bottom: 20px;
   }
+
+  .slot-game .score-board {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  color: #4CAF50;
+  text-align: center;
+  }
+
+
 `
