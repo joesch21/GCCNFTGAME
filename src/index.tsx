@@ -1,13 +1,16 @@
-// index.tsx or index.js
-
 import React from 'react';
-import ReactDOM from 'react-dom/client'; // Updated import
+import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root')!); // Change to createRoot
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  console.error("Root element not found. Please check your index.html file.");
+}

@@ -3,10 +3,14 @@ import styled from 'styled-components';
 export const StyledSlots = styled.div`
   perspective: 100px;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center the slots in the container */
+  justify-content: center;
 
   & > div {
     display: grid;
-    gap: 20px;
+    gap: 15px; /* Better suited for mobile */
     transform: rotateX(3deg) rotateY(0deg);
   }
 
@@ -19,6 +23,7 @@ export const StyledSlots = styled.div`
     }
   }
 
+  /* Keyframe animations for glowing effects */
   @keyframes reveal-glow {
     0%, 30% {
       border-color: #2d2d57;
@@ -26,15 +31,6 @@ export const StyledSlots = styled.div`
     }
     10% {
       border-color: white;
-      background: #ffffff33;
-    }
-  }
-
-  @keyframes shine {
-    0%, 30% {
-      background: #ffffff00;
-    }
-    10% {
       background: #ffffff33;
     }
   }
@@ -50,17 +46,6 @@ export const StyledSlots = styled.div`
     }
   }
 
-  @keyframes result-flash-2 {
-    0%, 50% {
-      background-color: #ffec6388;
-      filter: brightness(2.5) contrast(1.5) saturate(10);
-    }
-    100% {
-      background-color: #ffec6300;
-      filter: brightness(1) contrast(1);
-    }
-  }
-
   .result {
     border: none;
     padding: 10px;
@@ -72,7 +57,7 @@ export const StyledSlots = styled.div`
     border: 1px solid #ffec63;
     background-color: #ffec6311;
     color: #ffec63;
-    font-size: 14px;
+    font-size: 1rem;
     font-weight: bold;
     text-align: center;
   }
@@ -83,29 +68,10 @@ export const StyledSlots = styled.div`
 
   .slots {
     display: flex;
-    gap: 20px;
+    gap: 15px; /* Reduced gap for mobile appearance */
     justify-content: center;
     box-sizing: border-box;
     border-radius: 10px;
-  }
-
-  .slot::after {
-    content: "";
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    z-index: 1;
-  }
-
-  @keyframes reveal {
-    0% {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0%);
-      opacity: 1;
-    }
   }
 
   .slotImage {
@@ -120,20 +86,76 @@ export const StyledSlots = styled.div`
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 500px; /* Limit width on desktop */
+    position: relative; /* Necessary for ::before pseudo-element */
   }
 
   .buttons {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap; /* Wrap buttons for smaller screens */
   }
 
-  .slot-game .score-board {
-  margin-bottom: 10px;
-  font-size: 1.5rem;
-  color: #4CAF50;
-  text-align: center;
+  .score-board {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    color: #4CAF50;
+    text-align: center;
   }
 
+  /* Media query for mobile devices */
+  @media (max-width: 600px) {
+    .result {
+      font-size: 0.9rem; /* Adjust font size for smaller screens */
+      padding: 8px;
+    }
 
-`
+    .slot-machine {
+      padding: 15px;
+    }
+
+    .slots {
+      gap: 10px; /* Smaller gap between slot items */
+    }
+
+    .buttons {
+      gap: 5px;
+      flex-direction: column; /* Stack buttons vertically on mobile */
+      align-items: center;
+    }
+
+    .score-board {
+      font-size: 1.2rem;
+    }
+  }
+
+  /* Add flashing lights effect around the slot machine container */
+  .slot-machine::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border: 4px solid transparent;
+    border-radius: 10px;
+    animation: flashing-lights 2s infinite alternate;
+  }
+
+  @keyframes flashing-lights {
+    0% {
+      border-color: #ffec63;
+      box-shadow: 0 0 10px #ffec63, 0 0 20px #ffec63;
+    }
+    50% {
+      border-color: #ff5d63;
+      box-shadow: 0 0 10px #ff5d63, 0 0 20px #ff5d63;
+    }
+    100% {
+      border-color: #63ffb7;
+      box-shadow: 0 0 10px #63ffb7, 0 0 20px #63ffb7;
+    }
+  }
+`;
