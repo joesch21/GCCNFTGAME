@@ -69,11 +69,6 @@ const SlotMachine: React.FC = () => {
     }
   };
 
-  // Ensure points are updated on mobile devices as well
-  useEffect(() => {
-    if (walletAddress) updatePoints();
-  }, [walletAddress, hasDeposited]);
-
   useEffect(() => {
     connectWallet();
   }, []);
@@ -110,7 +105,7 @@ const SlotMachine: React.FC = () => {
     const spinInterval = setInterval(() => {
       const newCombination = getSlotCombination();
       setDisplayedCombination(newCombination);
-    }, 100);
+    }, 100); // Speed of spin animation
 
     setTimeout(() => {
       clearInterval(spinInterval);
@@ -131,10 +126,10 @@ const SlotMachine: React.FC = () => {
         playSound('lose');
         console.log("No win. Better luck next time!");
       }
-    }, 2000); // Spin duration
+    }, 3000); // Spin duration increased to 3000ms
   };
 
-    // Withdraw accumulated balance from the vault with confirmation
+  // Withdraw accumulated balance from the vault with confirmation
   const cashOut = async () => {
     if (!tokenVault) return;
 
@@ -154,7 +149,6 @@ const SlotMachine: React.FC = () => {
       alert("Cash out failed. Please try again.");
     }
   };
-
 
   return (
     <div className="slot-game">

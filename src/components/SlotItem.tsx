@@ -28,7 +28,7 @@ const StyledSlot = styled.div<{ $good: boolean }>`
   width: 100px;
   height: 150px;
   border: 2px solid ${({ $good }) => ($good ? '#4CAF50' : '#2d2d57')};
-  background-color: #4444FF11;
+  background-color: rgba(68, 68, 255, 0.1);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -40,6 +40,7 @@ const StyledSlot = styled.div<{ $good: boolean }>`
           animation: ${revealAnimation} 0.5s ease-out forwards;
         `
       : 'none'};
+  border-radius: 8px;
 `;
 
 const FlickerImage = styled.img<{ $flickering: boolean }>`
@@ -55,11 +56,11 @@ const Slot: React.FC<SlotProps> = ({ revealed, good, itemImage }) => {
   const [displayedImage, setDisplayedImage] = useState<string>(itemImage);
   const [flickering, setFlickering] = useState(true);
 
-  // Placeholder images using public paths
   const placeholderImages = [
-    process.env.PUBLIC_URL + '/slot-unicorn.png',
-    process.env.PUBLIC_URL + '/slot-emoji-cool.png',
-    process.env.PUBLIC_URL + '/slot-wojak.png',
+    `${process.env.PUBLIC_URL}/slot-unicorn.png`,
+    `${process.env.PUBLIC_URL}/slot-emoji-cool.png`,
+    `${process.env.PUBLIC_URL}/slot-wojak.png`,
+    `${process.env.PUBLIC_URL}/slot-smiley.png`,  // Add more if desired
   ];
 
   useEffect(() => {
@@ -84,7 +85,7 @@ const Slot: React.FC<SlotProps> = ({ revealed, good, itemImage }) => {
       <FlickerImage
         src={displayedImage}
         alt="slot item"
-        onError={() => setDisplayedImage(process.env.PUBLIC_URL + '/slot-unicorn.png')} // Fallback image
+        onError={() => setDisplayedImage(`${process.env.PUBLIC_URL}/slot-unicorn.png`)}
         $flickering={flickering}
       />
     </StyledSlot>
