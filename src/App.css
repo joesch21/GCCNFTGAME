@@ -49,7 +49,7 @@ body::before {
 
 /* Navbar styling */
 header.navbar {
-  background-image: url('assets/IMG_3402_s.png');
+  background-image: url('assets/condortransparent.png');
   background-size: cover;
   background-position: center;
   color: #fff; /* Adjust text color for better readability */
