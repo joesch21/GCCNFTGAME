@@ -6,7 +6,7 @@
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
     "ethers": "^5.7.2",
-    "express": "^4.18.2", 
+    "express": "^4.18.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "^5.0.1",
@@ -74,7 +74,7 @@
     "start": "react-scripts start",           
     "start:render": "node server.js",          
     "build": "react-scripts build",            
-    "test": "jest"                           
+    "test": "jest"                             
   },
   "eslintConfig": {
     "extends": [
