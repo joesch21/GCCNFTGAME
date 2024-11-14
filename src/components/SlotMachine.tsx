@@ -11,9 +11,7 @@ const SPIN_COST = 1; // Define the cost per spin
 
 const SlotMachine: React.FC = () => {
   const [spinning, setSpinning] = useState(false);
-  const [displayedCombination, setDisplayedCombination] = useState(
-    Array(3).fill(SLOT_ITEMS[0])
-  );
+  const [displayedCombination, setDisplayedCombination] = useState(Array(3).fill(SLOT_ITEMS[0]));
   const [points, setPoints] = useState(0);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [tokenVault, setTokenVault] = useState<ethers.Contract | null>(null);
@@ -63,12 +61,18 @@ const SlotMachine: React.FC = () => {
 
     try {
       const balance = await tokenVault.balances(walletAddress);
-      setPoints(parseFloat(ethers.utils.formatUnits(balance, 18)));
+      const formattedBalance = parseFloat(ethers.utils.formatUnits(balance, 18));
+      setPoints(formattedBalance);
     } catch (error) {
       console.error('Failed to fetch points:', error);
       alert("Failed to fetch points balance. Please try again.");
     }
   };
+
+  // Ensure points are updated on mobile devices as well
+  useEffect(() => {
+    if (walletAddress) updatePoints();
+  }, [walletAddress, hasDeposited]);
 
   useEffect(() => {
     connectWallet();
@@ -86,8 +90,9 @@ const SlotMachine: React.FC = () => {
       await depositTx.wait();
 
       console.log(`Deposited ${amount} tokens`);
-      setPoints(amount); // Set points directly to the deposited amount
+      setPoints(prevPoints => prevPoints + amount); // Increment points by deposit amount
       setHasDeposited(true);
+      updatePoints(); // Immediately update points to reflect deposit
     } catch (error) {
       console.error('Deposit failed:', error);
       alert("Deposit failed. Please try again.");
@@ -129,7 +134,7 @@ const SlotMachine: React.FC = () => {
     }, 2000); // Spin duration
   };
 
-  // Withdraw accumulated balance from the vault with confirmation
+    // Withdraw accumulated balance from the vault with confirmation
   const cashOut = async () => {
     if (!tokenVault) return;
 
@@ -137,16 +142,19 @@ const SlotMachine: React.FC = () => {
     if (!confirmCashOut) return; // Exit if user cancels
 
     try {
-      const withdrawTx = await tokenVault.withdraw(points);
+      // Convert the points to the correct token units (18 decimals)
+      const withdrawAmount = ethers.utils.parseUnits(points.toString(), 18);
+      const withdrawTx = await tokenVault.withdraw(withdrawAmount);
       await withdrawTx.wait();
 
-      console.log(`Cashed out ${points} tokens`);
+      console.log(`Cashed out ${points} tokens (converted to ${withdrawAmount} units)`);
       setPoints(0); // Reset points after withdrawal
     } catch (error) {
       console.error('Cash out failed:', error);
       alert("Cash out failed. Please try again.");
     }
   };
+
 
   return (
     <div className="slot-game">
