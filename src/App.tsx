@@ -1,11 +1,19 @@
 import React from 'react';
 import SlotMachine from './components/SlotMachine';
 import './App.css';
+import navbarBackground from './assets/condortransparent.png';
 
 const App: React.FC = () => {
   return (
     <div className="app">
-      <header className="navbar">
+      <header
+        className="navbar"
+        style={{
+          backgroundImage: `url(${navbarBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <h1 className="title">Gold Condor Capital</h1>
         <nav>
           <ul>

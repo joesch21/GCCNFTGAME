@@ -12,7 +12,7 @@
   text-align: center;
   font-family: Arial, sans-serif;
   background-color: #222;
-  color: #e0e0e0;
+  color: #ed6666;
   min-height: 100vh;
   padding: 20px;
   overflow-x: hidden;
@@ -35,16 +35,16 @@ body::before {
 .title {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  color: #28d850;
+  color: #11044f;
   text-shadow: 0px 0px 8px #0e2806, 0px 0px 15px #0e7a1f;
   font-family: 'Impact', sans-serif;
   animation: glitter 1s infinite alternate;
 }
 
 @keyframes glitter {
-  0% { text-shadow: 0px 0px 5px #33cc00, 0px 0px 10px #1f7a1f; }
+  0% { text-shadow: 0px 0px 5px #101f0b, 0px 0px 10px #1f7a1f; }
   50% { text-shadow: 0px 0px 15px #1f7a1f, 0px 0px 25px #28d850; }
-  100% { text-shadow: 0px 0px 5px #33cc00, 0px 0px 10px #1f7a1f; }
+  100% { text-shadow: 0px 0px 5px #e0af0d, 0px 0px 10px #1f7a1f; }
 }
 
 /* Navbar styling */
@@ -70,7 +70,7 @@ nav ul li {
 }
 
 nav ul li a {
-  color: #e0e0e0;
+  color: #762727;
   text-decoration: none;
   font-size: 1.2em;
   font-weight: bold;
