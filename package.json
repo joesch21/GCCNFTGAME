@@ -73,6 +73,7 @@
   "scripts": {
     "start": "node server.js",
     "start:dev": "react-scripts start",
+    "start:render": "serve -s build",
     "build": "react-scripts build",
     "test": "jest"
   },
