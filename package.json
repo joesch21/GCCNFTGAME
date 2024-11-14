@@ -11,7 +11,8 @@
     "react-dom": "^18.3.1",
     "react-scripts": "^5.0.1",
     "styled-components": "^6.1.13",
-    "tailwindcss": "^3.0.2"
+    "tailwindcss": "^3.0.2",
+    "serve": "^14.1.2" 
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",
@@ -73,7 +74,7 @@
   "scripts": {
     "start": "node server.js",
     "start:dev": "react-scripts start",
-    "start:render": "serve -s build",
+    "start:render": "serve -s build", 
     "build": "react-scripts build",
     "test": "jest"
   },
