@@ -45,6 +45,8 @@ export const StyledSlots = styled.div`
     position: relative;
   }
 
+  
+
   /* Additional styles if needed */
   /* Responsive adjustments for smaller screens */
   @media (max-width: 600px) {
