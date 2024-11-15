@@ -20,10 +20,10 @@ const onboard = Onboard({
   wallets: [metamask],
   chains: [
     {
-      id: '0x1', // Mainnet chain ID
-      token: 'ETH',
-      label: 'Ethereum Mainnet',
-      rpcUrl: `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_PROJECT_ID}`, // Use env variable
+      id: '0x61', // BSC Testnet Chain ID
+      token: 'tBNB', // Testnet BNB token symbol
+      label: 'Binance Smart Chain Testnet',
+      rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545', // BSC Testnet RPC URL
     },
   ],
 });
