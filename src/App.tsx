@@ -15,7 +15,7 @@ const metamask = metamaskModule({
   },
 });
 
-// Initialize Onboard with MetaMask and chain info
+// Initialize Onboard with MetaMask and BSC Testnet chain info
 const onboard = Onboard({
   wallets: [metamask],
   chains: [
@@ -23,7 +23,7 @@ const onboard = Onboard({
       id: '0x61', // BSC Testnet Chain ID
       token: 'tBNB', // Testnet BNB token symbol
       label: 'Binance Smart Chain Testnet',
-      rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545', // BSC Testnet RPC URL
+      rpcUrl: process.env.REACT_APP_BSC_TESTNET_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545', // Default BSC Testnet RPC URL
     },
   ],
 });
