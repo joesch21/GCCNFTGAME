@@ -11,7 +11,7 @@ import metamaskModule from '@web3-onboard/metamask';
 
 import { SpinnerOverlay, Loader } from './Slot.styles'; // Import styled spinner components
 
-// Initialize the MetaMask module with an empty options object
+// Initialize MetaMask module with metadata for the dApp
 const metamask = metamaskModule({
   options: {
     dappMetadata: {
@@ -33,6 +33,7 @@ const onboard = Onboard({
 });
 
 const SPIN_COST = 1; // Define the cost per spin
+const DEPOSIT_AMOUNT = 10; // Fixed deposit amount for ease on mobile
 
 interface SlotMachineProps {
   account: string | null;
@@ -103,15 +104,15 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   }, [account]);
 
   // Deposit tokens to start playing
-  const depositTokens = async (amount: number) => {
+  const depositTokens = async () => {
     if (!gctToken || !tokenVault) return;
 
     try {
       setDepositLoading(true);
 
-      const tokenAmount = ethers.utils.parseUnits(amount.toString(), 18);
+      const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
 
-      // Explicitly approve the exact amount for deposit
+      // Explicitly approve the fixed deposit amount for MetaMask on mobile
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
       await approveTx.wait();
 
@@ -119,8 +120,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
 
-      console.log(`Deposited ${amount} tokens`);
-      setPoints(prevPoints => prevPoints + amount); // Increment points by deposit amount
+      console.log(`Deposited ${DEPOSIT_AMOUNT} tokens`);
+      setPoints(prevPoints => prevPoints + DEPOSIT_AMOUNT); // Increment points by deposit amount
       updatePoints(); // Immediately update points to reflect deposit
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -197,8 +198,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       <div className="score-board">
         <h2>Points: {points}</h2>
       </div>
-      <button onClick={() => depositTokens(10)} disabled={depositLoading}>
-        {depositLoading ? 'Depositing...' : 'Deposit 10 Tokens'}
+      <button onClick={depositTokens} disabled={depositLoading}>
+        {depositLoading ? 'Depositing...' : `Deposit ${DEPOSIT_AMOUNT} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
         {spinning ? 'Spinning...' : 'Spin'}
