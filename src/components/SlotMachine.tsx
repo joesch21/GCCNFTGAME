@@ -6,10 +6,33 @@ import { SLOT_ITEMS } from '../constants';
 import { getSlotCombination, calculatePayout } from '../utils/utils';
 import TokenVaultABI from '../TokenVault.json';
 import GCCTokenABI from '../GCCToken.json';
+import Onboard from '@web3-onboard/core';
+import metamaskModule from '@web3-onboard/metamask';
+
+// Initialize the MetaMask module with an empty options object
+const metamask = metamaskModule({
+  options: {} // Passing an empty object for options
+});
+
+const onboard = Onboard({
+  wallets: [metamask],
+  chains: [
+    {
+      id: '0x1', // Mainnet chain ID
+      token: 'ETH',
+      label: 'Ethereum Mainnet',
+      rpcUrl: `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_PROJECT_ID}`, // Using environment variable for Infura project ID
+    },
+  ],
+});
 
 const SPIN_COST = 1; // Define the cost per spin
 
-const SlotMachine: React.FC = () => {
+interface SlotMachineProps {
+  account: string | null;
+}
+
+const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   const [spinning, setSpinning] = useState(false);
   const [displayedCombination, setDisplayedCombination] = useState(Array(3).fill(SLOT_ITEMS[0]));
   const [points, setPoints] = useState(0);
@@ -22,36 +45,31 @@ const SlotMachine: React.FC = () => {
 
   // Connect to MetaMask and set up contract instances
   const connectWallet = async () => {
-    if (window.ethereum && window.ethereum.request) {
-      try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const address = await signer.getAddress();
-        setWalletAddress(address);
+    const wallets = await onboard.connectWallet();
+    if (wallets && wallets.length > 0) {
+      const walletAccount = wallets[0].accounts[0].address;
+      setWalletAddress(walletAccount);
+      console.log("Wallet connected:", walletAccount);
 
-        const tokenVaultContract = new ethers.Contract(
-          '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
-          TokenVaultABI,
-          signer
-        );
-        setTokenVault(tokenVaultContract);
+      const provider = new ethers.providers.Web3Provider(wallets[0].provider);
+      const signer = provider.getSigner();
 
-        const gctTokenContract = new ethers.Contract(
-          '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7',
-          GCCTokenABI,
-          signer
-        );
-        setGctToken(gctTokenContract);
+      const tokenVaultContract = new ethers.Contract(
+        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
+        TokenVaultABI,
+        signer
+      );
+      setTokenVault(tokenVaultContract);
 
-        // Fetch initial points balance
-        updatePoints();
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
-        alert("Failed to connect wallet. Please try again.");
-      }
-    } else {
-      alert("MetaMask is not installed");
+      const gctTokenContract = new ethers.Contract(
+        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7',
+        GCCTokenABI,
+        signer
+      );
+      setGctToken(gctTokenContract);
+
+      // Fetch initial points balance
+      updatePoints();
     }
   };
 
@@ -70,8 +88,12 @@ const SlotMachine: React.FC = () => {
   };
 
   useEffect(() => {
-    connectWallet();
-  }, []);
+    if (account) {
+      setWalletAddress(account);
+    } else {
+      connectWallet();
+    }
+  }, [account]);
 
   // Deposit tokens to start playing
   const depositTokens = async (amount: number) => {
