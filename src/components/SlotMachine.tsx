@@ -9,19 +9,23 @@ import GCCTokenABI from '../GCCToken.json';
 import Onboard from '@web3-onboard/core';
 import metamaskModule from '@web3-onboard/metamask';
 
-// Initialize the MetaMask module with an empty options object
+// Initialize MetaMask module with dapp metadata
 const metamask = metamaskModule({
-  options: {} // Passing an empty object for options
+  options: {
+    dappMetadata: {
+      name: 'Gold Condor Capital Game',
+    },
+  },
 });
 
 const onboard = Onboard({
   wallets: [metamask],
   chains: [
     {
-      id: '0x1', // Mainnet chain ID
-      token: 'ETH',
-      label: 'Ethereum Mainnet',
-      rpcUrl: `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_PROJECT_ID}`, // Using environment variable for Infura project ID
+      id: '0x61', // BSC Testnet Chain ID
+      token: 'tBNB',
+      label: 'Binance Smart Chain Testnet',
+      rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     },
   ],
 });
@@ -39,7 +43,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [tokenVault, setTokenVault] = useState<ethers.Contract | null>(null);
   const [gctToken, setGctToken] = useState<ethers.Contract | null>(null);
-  const [hasDeposited, setHasDeposited] = useState(false);
 
   const playSound = useSound();
 
@@ -97,18 +100,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
 
   // Deposit tokens to start playing
   const depositTokens = async (amount: number) => {
-    if (!gctToken || !tokenVault) return;
+    if (!gctToken || !tokenVault || !walletAddress) return;
 
     try {
-      const approveTx = await gctToken.approve(tokenVault.address, ethers.utils.parseUnits(amount.toString(), 18));
-      await approveTx.wait();
+      const requiredAmount = ethers.utils.parseUnits(amount.toString(), 18);
+      
+      // Check current allowance
+      const currentAllowance = await gctToken.allowance(walletAddress, tokenVault.address);
 
-      const depositTx = await tokenVault.deposit(ethers.utils.parseUnits(amount.toString(), 18));
+      // Only call approve if the allowance is less than the required amount
+      if (currentAllowance.lt(requiredAmount)) {
+        const approveTx = await gctToken.approve(tokenVault.address, requiredAmount);
+        await approveTx.wait();
+      }
+
+      const depositTx = await tokenVault.deposit(requiredAmount);
       await depositTx.wait();
 
       console.log(`Deposited ${amount} tokens`);
       setPoints(prevPoints => prevPoints + amount); // Increment points by deposit amount
-      setHasDeposited(true);
       updatePoints(); // Immediately update points to reflect deposit
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -118,37 +128,32 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
 
   // Handle slot machine spin
   const spinSlots = () => {
-    if (spinning || points < SPIN_COST) return; // Prevent spin if spinning or insufficient points
+    if (spinning || points < SPIN_COST) return;
     setSpinning(true);
-    setPoints(prevPoints => prevPoints - SPIN_COST); // Deduct spin cost
+    setPoints(prevPoints => prevPoints - SPIN_COST);
     playSound('spin');
 
-    // Randomize slot images as the spin animation
     const spinInterval = setInterval(() => {
       const newCombination = getSlotCombination();
       setDisplayedCombination(newCombination);
-    }, 100); // Speed of spin animation
+    }, 100);
 
     setTimeout(() => {
       clearInterval(spinInterval);
       setSpinning(false);
 
-      // Final combination after spin
       const finalCombination = getSlotCombination();
       setDisplayedCombination(finalCombination);
 
-      // Calculate payout multiplier based on final combination
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
         playSound('win');
         const winnings = payoutMultiplier * SPIN_COST;
-        console.log(`You win! Payout multiplier: ${payoutMultiplier}x, winnings: ${winnings} points`);
-        setPoints(prevPoints => prevPoints + winnings); // Add winnings to points
+        setPoints(prevPoints => prevPoints + winnings);
       } else {
         playSound('lose');
-        console.log("No win. Better luck next time!");
       }
-    }, 3000); // Spin duration increased to 3000ms
+    }, 3000);
   };
 
   // Withdraw accumulated balance from the vault with confirmation
@@ -156,16 +161,15 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
     if (!tokenVault) return;
 
     const confirmCashOut = window.confirm("Are you sure you want to cash out your points?");
-    if (!confirmCashOut) return; // Exit if user cancels
+    if (!confirmCashOut) return;
 
     try {
-      // Convert the points to the correct token units (18 decimals)
       const withdrawAmount = ethers.utils.parseUnits(points.toString(), 18);
       const withdrawTx = await tokenVault.withdraw(withdrawAmount);
       await withdrawTx.wait();
 
-      console.log(`Cashed out ${points} tokens (converted to ${withdrawAmount} units)`);
-      setPoints(0); // Reset points after withdrawal
+      console.log(`Cashed out ${points} tokens`);
+      setPoints(0);
     } catch (error) {
       console.error('Cash out failed:', error);
       alert("Cash out failed. Please try again.");
@@ -178,16 +182,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
         <h2>Points: {points}</h2>
       </div>
       <button onClick={() => depositTokens(10)}>Deposit 10 Tokens</button>
-      <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>Spin</button> {/* Disable spin if insufficient points */}
+      <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>Spin</button>
       <button onClick={cashOut} disabled={points === 0}>Cash Out</button>
       <div className="slots">
         {displayedCombination.map((item, index) => (
-          <SlotItem
-            key={index}
-            revealed={!spinning}
-            good={item.good || false}
-            itemImage={item.image}
-          />
+          <SlotItem key={index} revealed={!spinning} good={item.good || false} itemImage={item.image} />
         ))}
       </div>
     </div>
