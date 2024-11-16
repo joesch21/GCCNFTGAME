@@ -1,32 +1,8 @@
-import React, { useState } from 'react';
-import SlotMachine from './components/SlotMachine';
-import './App.css';
-import navbarBackground from './assets/condortransparent.png';
-
-import Onboard from '@web3-onboard/core';
-import metamaskModule from '@web3-onboard/metamask';
-
-// Initialize MetaMask module with dapp metadata
-const metamask = metamaskModule({
-  options: {
-    dappMetadata: {
-      name: 'Gold Condor Capital Game',
-    },
-  },
-});
-
-// Initialize Onboard with MetaMask and BSC Testnet chain info
-const onboard = Onboard({
-  wallets: [metamask],
-  chains: [
-    {
-      id: '0x61', // BSC Testnet Chain ID
-      token: 'tBNB', // Testnet BNB token symbol
-      label: 'Binance Smart Chain Testnet',
-      rpcUrl: process.env.REACT_APP_BSC_TESTNET_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545', // Default BSC Testnet RPC URL
-    },
-  ],
-});
+import React, { useState } from "react";
+import SlotMachine from "./components/SlotMachine";
+import "./App.css";
+import navbarBackground from "./assets/condortransparent.png";
+import onboard from "./utils/walletProvider"; // Import walletProvider
 
 const App: React.FC = () => {
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
@@ -44,7 +20,7 @@ const App: React.FC = () => {
   // Function to disconnect from MetaMask using Web3-Onboard
   const disconnectWallet = async () => {
     if (connectedAccount) {
-      await onboard.disconnectWallet({ label: 'MetaMask' });
+      await onboard.disconnectWallet({ label: "MetaMask" });
       setConnectedAccount(null);
       console.log("Wallet disconnected");
     }
@@ -56,22 +32,37 @@ const App: React.FC = () => {
         className="navbar"
         style={{
           backgroundImage: `url(${navbarBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         <h1 className="title">Gold Condor Capital</h1>
         <nav>
           <ul>
             <li>
-              <button onClick={connectWallet}>
-                {connectedAccount ? 'Connected' : 'Connect Wallet'}
+              <button
+                onClick={connectedAccount ? disconnectWallet : connectWallet}
+                style={{
+                  background: connectedAccount
+                    ? "linear-gradient(45deg, #ff4d4d, #8b0000)" // Red for connected
+                    : "linear-gradient(45deg, #28d850, #ffdd44)", // Green for default
+                  color: "#fff",
+                  border: connectedAccount
+                    ? "2px solid #ff4d4d"
+                    : "2px solid #28d850",
+                  borderRadius: "8px",
+                  padding: "8px 16px",
+                  fontSize: "1em",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "transform 0.2s, background 0.2s",
+                  margin: "5px",
+                  maxWidth: "90%",
+                }}
+              >
+                {connectedAccount ? "Connected" : "Connect Wallet"}
               </button>
-            </li>
-            <li>
-              {connectedAccount && (
-                <button onClick={disconnectWallet}>Disconnect Wallet</button>
-              )}
             </li>
           </ul>
         </nav>

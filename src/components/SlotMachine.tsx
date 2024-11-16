@@ -6,31 +6,9 @@ import { SLOT_ITEMS } from '../constants';
 import { getSlotCombination, calculatePayout } from '../utils/utils';
 import TokenVaultABI from '../TokenVault.json';
 import GCCTokenABI from '../GCCToken.json';
-import Onboard from '@web3-onboard/core';
-import metamaskModule from '@web3-onboard/metamask';
+import onboard from '../utils/walletProvider'; // Import the onboard instance from walletProvider.ts
 
 import { SpinnerOverlay, Loader } from './Slot.styles'; // Import styled spinner components
-
-// Initialize MetaMask module with metadata for the dApp
-const metamask = metamaskModule({
-  options: {
-    dappMetadata: {
-      name: 'Gold Condor Capital Game',
-    },
-  },
-});
-
-const onboard = Onboard({
-  wallets: [metamask],
-  chains: [
-    {
-      id: '0x61', // BSC Testnet Chain ID
-      token: 'tBNB',
-      label: 'Binance Smart Chain Testnet',
-      rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-    },
-  ],
-});
 
 const SPIN_COST = 1; // Define the cost per spin
 const DEPOSIT_AMOUNT = 10; // Fixed deposit amount for ease on mobile
@@ -63,14 +41,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const signer = provider.getSigner();
 
       const tokenVaultContract = new ethers.Contract(
-        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
+        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5', // TokenVault contract address
         TokenVaultABI,
         signer
       );
       setTokenVault(tokenVaultContract);
 
       const gctTokenContract = new ethers.Contract(
-        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7',
+        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7', // GCCToken contract address
         GCCTokenABI,
         signer
       );
@@ -106,25 +84,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   // Deposit tokens to start playing
   const depositTokens = async () => {
     if (!gctToken || !tokenVault) return;
-  
+
     try {
       setDepositLoading(true);
-  
+
       const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
       console.log(`Approving ${DEPOSIT_AMOUNT} GCCT tokens for TokenVault...`);
-  
+
       // Explicitly approve the amount
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
       await approveTx.wait();
-  
+
       console.log("Approval successful. Proceeding with deposit...");
-  
+
       // Deposit the approved amount
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
-  
+
       console.log(`Deposited ${DEPOSIT_AMOUNT} GCCT tokens.`);
-      setPoints(prevPoints => prevPoints + DEPOSIT_AMOUNT); // Update points locally
+      setPoints((prevPoints) => prevPoints + DEPOSIT_AMOUNT); // Update points locally
       updatePoints(); // Fetch updated balance
     } catch (error) {
       console.error("Deposit failed:", error);
@@ -133,13 +111,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       setDepositLoading(false);
     }
   };
-  
 
   // Handle slot machine spin
   const spinSlots = () => {
     if (spinning || points < SPIN_COST) return; // Prevent spin if already spinning or insufficient points
     setSpinning(true);
-    setPoints(prevPoints => prevPoints - SPIN_COST); // Deduct spin cost
+    setPoints((prevPoints) => prevPoints - SPIN_COST); // Deduct spin cost
     playSound('spin');
 
     const spinInterval = setInterval(() => {
@@ -159,7 +136,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
         playSound('win');
         const winnings = payoutMultiplier * SPIN_COST;
         console.log(`You win! Payout multiplier: ${payoutMultiplier}x, winnings: ${winnings} points`);
-        setPoints(prevPoints => prevPoints + winnings);
+        setPoints((prevPoints) => prevPoints + winnings);
       } else {
         playSound('lose');
         console.log("No win. Better luck next time!");
