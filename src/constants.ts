@@ -1,3 +1,11 @@
+import IMAGE_2X from './assets/slot-2x.png';
+import IMAGE_3X from './assets/slot-3x.png';
+import IMAGE_5X from './assets/slot-5x.png';
+import IMAGE_COOL from './assets/slot-emoji-cool.png';
+import IMAGE_HEARTS from './assets/slot-emoji-hearts.png';
+import IMAGE_UNICORN from './assets/slot-unicorn.png';
+import IMAGE_WOJAK from './assets/slot-wojak.png';
+
 // Contract Addresses for Token Vault and GCC Token
 export const CONTRACT_ADDRESSES = {
   TOKEN_VAULT: '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
@@ -6,15 +14,6 @@ export const CONTRACT_ADDRESSES = {
 
 // Define the cost per spin
 export const SPIN_COST = 1;
-
-// Define slot items with their respective multipliers and images
-import IMAGE_2X from './assets/slot-2x.png';
-import IMAGE_3X from './assets/slot-3x.png';
-import IMAGE_5X from './assets/slot-5x.png';
-import IMAGE_COOL from './assets/slot-emoji-cool.png';
-import IMAGE_HEARTS from './assets/slot-emoji-hearts.png';
-import IMAGE_UNICORN from './assets/slot-unicorn.png';
-import IMAGE_WOJAK from './assets/slot-wojak.png';
 
 // Interface for a slot item with a multiplier and image
 export interface SlotItem {
