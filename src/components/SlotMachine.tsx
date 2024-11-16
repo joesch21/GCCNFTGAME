@@ -27,7 +27,7 @@ const onboard = Onboard({
       id: '0x61', // BSC Testnet Chain ID
       token: 'tBNB',
       label: 'Binance Smart Chain Testnet',
-      rpcUrl: 'https://bsc-testnet.publicnode.com', // Alternative RPC
+      rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     },
   ],
 });
@@ -128,9 +128,66 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       updatePoints(); // Fetch updated balance
     } catch (error) {
       console.error("Deposit failed:", error);
-      alert("Deposit failed. Ensure MetaMask recognizes the token. If the spending cap is blank, manually enter the amount.");
+      alert("Deposit failed. Please try again. If the spending cap is blank, manually enter the amount.");
     } finally {
       setDepositLoading(false);
+    }
+  };
+  
+
+  // Handle slot machine spin
+  const spinSlots = () => {
+    if (spinning || points < SPIN_COST) return; // Prevent spin if already spinning or insufficient points
+    setSpinning(true);
+    setPoints(prevPoints => prevPoints - SPIN_COST); // Deduct spin cost
+    playSound('spin');
+
+    const spinInterval = setInterval(() => {
+      const newCombination = getSlotCombination();
+      setDisplayedCombination(newCombination);
+    }, 100); // Speed of spin animation
+
+    setTimeout(() => {
+      clearInterval(spinInterval);
+      setSpinning(false);
+
+      const finalCombination = getSlotCombination();
+      setDisplayedCombination(finalCombination);
+
+      const payoutMultiplier = calculatePayout(finalCombination);
+      if (payoutMultiplier > 0) {
+        playSound('win');
+        const winnings = payoutMultiplier * SPIN_COST;
+        console.log(`You win! Payout multiplier: ${payoutMultiplier}x, winnings: ${winnings} points`);
+        setPoints(prevPoints => prevPoints + winnings);
+      } else {
+        playSound('lose');
+        console.log("No win. Better luck next time!");
+      }
+    }, 3000); // Duration of spin
+  };
+
+  // Withdraw accumulated balance from the vault with confirmation
+  const cashOut = async () => {
+    if (!tokenVault) return;
+
+    const confirmCashOut = window.confirm("Are you sure you want to cash out your points?");
+    if (!confirmCashOut) return;
+
+    try {
+      setLoading(true);
+
+      const withdrawAmount = ethers.utils.parseUnits(points.toString(), 18);
+      const withdrawTx = await tokenVault.withdraw(withdrawAmount);
+      await withdrawTx.wait();
+
+      console.log(`Cashed out ${points} tokens`);
+      setPoints(0); // Reset points after withdrawal
+    } catch (error) {
+      console.error('Cash out failed:', error);
+      alert("Cash out failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -148,7 +205,22 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       <button onClick={depositTokens} disabled={depositLoading}>
         {depositLoading ? 'Depositing...' : `Deposit ${DEPOSIT_AMOUNT} Tokens`}
       </button>
-      {/* Other buttons remain unchanged */}
+      <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
+        {spinning ? 'Spinning...' : 'Spin'}
+      </button>
+      <button onClick={cashOut} disabled={loading || points === 0}>
+        {loading ? 'Processing Cash Out...' : 'Cash Out'}
+      </button>
+      <div className="slots">
+        {displayedCombination.map((item, index) => (
+          <SlotItem
+            key={index}
+            revealed={!spinning}
+            good={item.good || false}
+            itemImage={item.image}
+          />
+        ))}
+      </div>
     </div>
   );
 };

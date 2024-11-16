@@ -1,0 +1,27 @@
+[33mfd8b476[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m mobile fixes
+[33md90f25b[m add mettmask integration rev...
+[33mbeba5d3[m ADD metamask integration...
+[33m4ec1bb5[m refined mobile integration
+[33m4dc1574[m updated mobile function
+[33mf99875a[m deposit 10 fix
+[33md093afd[m ADD CHANGES!.
+[33me14ed38[m deposit of GCCT
+[33m0eccda5[m Test network update...
+[33mc5a1d85[m metamask integration cont
+[33m6e786fd[m metamask integration...
+[33m572ff49[m asset imagage change
+[33m2994d3e[m graphics update
+[33me606df1[m update jason package
+[33maca0e08[m update jason package
+[33m5ca450b[m updated background and render
+[33m5038578[m Updated package.json for Render deployment and local development
+[33m4978a06[m Fix withdrawal unit conversion and update cash-out functionality
+[33mcde2d9d[m package.json refinedment
+[33m91d62bb[m package json amendment
+[33mfa4a422[m package.json
+[33mb58ebb1[m render update
+[33ma6436a6[m metamask web3 integrations
+[33m071afc3[m added some stuff
+[33mdd2dce6[m Add slot game with flickering image effect and improved spin logic
+[33me9bb4d8[m Save changes before ejecting
+[33m826734f[m Initialize project using Create React App
