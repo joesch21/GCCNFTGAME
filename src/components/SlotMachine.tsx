@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import SlotItem from './SlotItem';
 import { useSound } from '../hooks/useSound';
-import { SLOT_ITEMS } from '../constants';
+import { SLOT_ITEMS, SPIN_COST, CONTRACT_ADDRESSES } from '../constants'; // Import constants
 import { getSlotCombination, calculatePayout } from '../utils/utils';
-import TokenVaultABI from '../TokenVault.json';
-import GCCTokenABI from '../GCCToken.json';
 import onboard from '../utils/walletProvider'; // Import walletProvider
 import { SpinnerOverlay, Loader } from './Slot.styles'; // Import styled spinner components
-
-const SPIN_COST = 1; // Define the cost per spin
 
 interface SlotMachineProps {
   account: string | null;
@@ -40,15 +36,15 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const signer = provider.getSigner();
 
       const tokenVaultContract = new ethers.Contract(
-        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
-        TokenVaultABI,
+        CONTRACT_ADDRESSES.TOKEN_VAULT,
+        require('../TokenVault.json'),
         signer
       );
       setTokenVault(tokenVaultContract);
 
       const gctTokenContract = new ethers.Contract(
-        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7',
-        GCCTokenABI,
+        CONTRACT_ADDRESSES.GCC_TOKEN,
+        require('../GCCToken.json'),
         signer
       );
       setGctToken(gctTokenContract);
@@ -80,36 +76,64 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
     }
   }, [account]);
 
-  // Deposit tokens to start playing
   const depositTokens = async () => {
     if (!gctToken || !tokenVault || depositAmount <= 0) return;
 
     try {
-      setDepositLoading(true);
+      setDepositLoading(true); // Show spinner during the deposit process
 
       const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
-      console.log(`Approving ${depositAmount} GCCT tokens for TokenVault...`);
 
-      // Explicitly approve the amount
-      const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
-      await approveTx.wait();
+      // Step 1: Subtle approval process
+      console.log(`Checking approval for ${depositAmount} GCCT tokens...`);
+      const currentAllowance = await gctToken.allowance(walletAddress, CONTRACT_ADDRESSES.TOKEN_VAULT);
 
-      console.log("Approval successful. Proceeding with deposit...");
+      if (currentAllowance.lt(tokenAmount)) {
+        console.log(`Current allowance (${currentAllowance.toString()}) is insufficient. Approving...`);
+        const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.TOKEN_VAULT, tokenAmount);
+        console.log("Approval transaction submitted. Waiting for confirmation...");
+        await approveTx.wait();
+        console.log("Approval successful!");
+      } else {
+        console.log("Sufficient allowance already exists. Skipping approval step.");
+      }
 
-      // Deposit the approved amount
+      // Step 2: Proceed to deposit
+      console.log("Depositing tokens...");
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
-
       console.log(`Deposited ${depositAmount} GCCT tokens.`);
-      setPoints(prevPoints => prevPoints + depositAmount); // Update points locally
-      updatePoints(); // Fetch updated balance
+
+      // Update user's points after deposit
+      setPoints(prevPoints => prevPoints + depositAmount);
+      updatePoints(); // Refresh points from the contract
     } catch (error) {
       console.error("Deposit failed:", error);
       alert(
-        "Deposit failed. Please try again. If the spending cap is blank, manually enter the amount."
+        "Something went wrong! Please check your wallet and try again. If the spending cap is pending, wait for it to complete."
       );
     } finally {
-      setDepositLoading(false);
+      setDepositLoading(false); // Hide spinner
+    }
+  };
+
+  const cashOut = async () => {
+    if (!tokenVault || points <= 0) return;
+
+    try {
+      setLoading(true); // Show spinner during cash-out process
+
+      const tokenAmount = ethers.utils.parseUnits(points.toString(), 18);
+      const withdrawTx = await tokenVault.withdraw(tokenAmount);
+      await withdrawTx.wait();
+
+      console.log(`Successfully cashed out ${points} tokens.`);
+      setPoints(0); // Reset points after successful cash-out
+    } catch (error) {
+      console.error("Cash out failed:", error);
+      alert("Cash out failed. Please try again.");
+    } finally {
+      setLoading(false); // Hide spinner
     }
   };
 
@@ -179,7 +203,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
         {spinning ? "Spinning..." : "Spin"}
       </button>
-      <button disabled={loading || points === 0}>
+      <button onClick={cashOut} disabled={loading || points === 0}>
         {loading ? "Processing Cash Out..." : "Cash Out"}
       </button>
       <div className="slots">
