@@ -112,7 +112,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
 
       const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
 
-      // Explicitly approve the fixed deposit amount for MetaMask on mobile
+      // Explicitly approve the fixed deposit amount
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
       await approveTx.wait();
 

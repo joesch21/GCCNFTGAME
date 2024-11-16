@@ -7,6 +7,7 @@
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@web3-onboard/core": "^2.23.0",
     "@web3-onboard/metamask": "^2.2.0",
+    "@web3-onboard/walletconnect": "^2.6.1",
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
     "eciesjs": "^0.4.11",
