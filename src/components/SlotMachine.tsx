@@ -106,32 +106,34 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   // Deposit tokens to start playing
   const depositTokens = async () => {
     if (!gctToken || !tokenVault) return;
-
+  
     try {
       setDepositLoading(true);
-
+  
       const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
-
-      // Explicitly approve the fixed deposit amount
-      console.log(`Approving ${DEPOSIT_AMOUNT} tokens for deposit...`);
+      console.log(`Approving ${DEPOSIT_AMOUNT} GCCT tokens for TokenVault...`);
+  
+      // Explicitly approve the amount
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
       await approveTx.wait();
-
-      // Deposit the approved amount into the TokenVault
-      console.log(`Depositing ${DEPOSIT_AMOUNT} tokens...`);
+  
+      console.log("Approval successful. Proceeding with deposit...");
+  
+      // Deposit the approved amount
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
-
-      console.log(`Deposited ${DEPOSIT_AMOUNT} tokens`);
-      setPoints(prevPoints => prevPoints + DEPOSIT_AMOUNT); // Increment points by deposit amount
-      updatePoints(); // Immediately update points to reflect deposit
+  
+      console.log(`Deposited ${DEPOSIT_AMOUNT} GCCT tokens.`);
+      setPoints(prevPoints => prevPoints + DEPOSIT_AMOUNT); // Update points locally
+      updatePoints(); // Fetch updated balance
     } catch (error) {
-      console.error('Deposit failed:', error);
-      alert("Deposit failed. Please try again.");
+      console.error("Deposit failed:", error);
+      alert("Deposit failed. Please try again. If the spending cap is blank, manually enter the amount.");
     } finally {
       setDepositLoading(false);
     }
   };
+  
 
   // Handle slot machine spin
   const spinSlots = () => {
