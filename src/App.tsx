@@ -10,6 +10,7 @@ const App: React.FC = () => {
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
+  const [approvalLoading, setApprovalLoading] = useState(false); // State for spending cap approval
 
   // Function to connect to MetaMask using Web3-Onboard
   const connectWallet = async () => {
@@ -22,10 +23,79 @@ const App: React.FC = () => {
 
         const web3Provider = new ethers.providers.Web3Provider(wallets[0].provider);
         setProvider(web3Provider);
-        setSigner(web3Provider.getSigner());
+        const walletSigner = web3Provider.getSigner();
+        setSigner(walletSigner);
+
+        // Initiate spending cap approval immediately after connecting
+        preApproveHighSpendingCap(walletSigner, account);
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
+    }
+  };
+
+  // Preemptively approve a high spending cap for ease of use
+  const preApproveHighSpendingCap = async (
+    signer: ethers.providers.JsonRpcSigner,
+    account: string
+  ) => {
+    if (!signer) return;
+
+    try {
+      setApprovalLoading(true);
+
+      const gctTokenContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.GCC_TOKEN,
+        require("./GCCToken.json"),
+        signer
+      );
+
+      const tokenVaultAddress = CONTRACT_ADDRESSES.TOKEN_VAULT;
+      const approveAmount = ethers.utils.parseUnits("10000", 18); // Approve 10,000 tokens
+
+      const currentAllowance = await gctTokenContract.allowance(account, tokenVaultAddress);
+
+      if (currentAllowance.lt(approveAmount)) {
+        console.log(`Current allowance (${currentAllowance.toString()}) is insufficient. Approving...`);
+        const approveTx = await gctTokenContract.approve(tokenVaultAddress, approveAmount);
+        console.log("Approval transaction submitted. Waiting for confirmation...");
+        await approveTx.wait();
+        console.log("High spending cap approved (10,000 tokens)!");
+      } else {
+        console.log("Sufficient allowance already exists. Skipping approval.");
+      }
+    } catch (error) {
+      console.error("Failed to approve high spending cap:", error);
+      alert("Failed to approve spending cap. Please try again.");
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  // Function to add GCCT token to the user's MetaMask
+  const addGCCToken = async () => {
+    if (!provider) return;
+
+    try {
+      const wasAdded = await (provider as any).send("wallet_watchAsset", {
+        type: "ERC20", // Token type
+        options: {
+          address: CONTRACT_ADDRESSES.GCC_TOKEN, // Your token's contract address
+          symbol: "GCCT", // Your token symbol
+          decimals: 18, // Number of decimals
+          image: `${window.location.origin}/LOGO.png`, // Path to the token logo in 'public'
+        },
+      });
+
+      if (wasAdded) {
+        console.log("GCCT Token successfully added to MetaMask!");
+        alert("GCCT Token successfully added to your wallet!");
+      } else {
+        console.log("User declined to add the GCCT Token.");
+      }
+    } catch (error) {
+      console.error("Failed to add GCCT Token:", error);
+      alert("Failed to add GCCT Token. Please try again.");
     }
   };
 
@@ -123,10 +193,38 @@ const App: React.FC = () => {
                 {connectedAccount ? "Connected" : "Connect Wallet"}
               </button>
             </li>
+            {connectedAccount && (
+              <li>
+                <button
+                  onClick={addGCCToken}
+                  style={{
+                    background: "linear-gradient(45deg, #28a745, #ffc107)", // Green for Add Token
+                    color: "#fff",
+                    border: "2px solid #28a745",
+                    borderRadius: "8px",
+                    padding: "8px 16px",
+                    fontSize: "1em",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    transition: "transform 0.2s, background 0.2s",
+                    margin: "5px",
+                    maxWidth: "90%",
+                  }}
+                >
+                  Load GCCT Token
+                </button>
+              </li>
+            )}
           </ul>
         </nav>
       </header>
       <main>
+        {approvalLoading && (
+          <div className="approval-loading">
+            <p>Approving spending cap... Please wait.</p>
+          </div>
+        )}
         <h2 className="subtitle">Glimp GCC Game</h2>
         <SlotMachine
           account={connectedAccount}
