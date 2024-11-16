@@ -113,10 +113,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
 
       // Explicitly approve the fixed deposit amount
+      console.log(`Approving ${DEPOSIT_AMOUNT} tokens for deposit...`);
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
       await approveTx.wait();
 
       // Deposit the approved amount into the TokenVault
+      console.log(`Depositing ${DEPOSIT_AMOUNT} tokens...`);
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
 
