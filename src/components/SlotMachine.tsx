@@ -6,12 +6,10 @@ import { SLOT_ITEMS } from '../constants';
 import { getSlotCombination, calculatePayout } from '../utils/utils';
 import TokenVaultABI from '../TokenVault.json';
 import GCCTokenABI from '../GCCToken.json';
-import onboard from '../utils/walletProvider'; // Import the onboard instance from walletProvider.ts
-
+import onboard from '../utils/walletProvider'; // Import walletProvider
 import { SpinnerOverlay, Loader } from './Slot.styles'; // Import styled spinner components
 
 const SPIN_COST = 1; // Define the cost per spin
-const DEPOSIT_AMOUNT = 10; // Fixed deposit amount for ease on mobile
 
 interface SlotMachineProps {
   account: string | null;
@@ -26,6 +24,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   const [gctToken, setGctToken] = useState<ethers.Contract | null>(null);
   const [loading, setLoading] = useState(false); // For loading states
   const [depositLoading, setDepositLoading] = useState(false); // Separate loading state for deposits
+  const [depositAmount, setDepositAmount] = useState<number>(10); // New state for user-input deposit amount
 
   const playSound = useSound();
 
@@ -41,14 +40,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const signer = provider.getSigner();
 
       const tokenVaultContract = new ethers.Contract(
-        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5', // TokenVault contract address
+        '0x3f8816B08F5968EbEc20000D0963B4A8EBF3C7E5',
         TokenVaultABI,
         signer
       );
       setTokenVault(tokenVaultContract);
 
       const gctTokenContract = new ethers.Contract(
-        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7', // GCCToken contract address
+        '0x07b49c3751ac1Aba1A2B11f2704e974Af6E401A7',
         GCCTokenABI,
         signer
       );
@@ -83,13 +82,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
 
   // Deposit tokens to start playing
   const depositTokens = async () => {
-    if (!gctToken || !tokenVault) return;
+    if (!gctToken || !tokenVault || depositAmount <= 0) return;
 
     try {
       setDepositLoading(true);
 
-      const tokenAmount = ethers.utils.parseUnits(DEPOSIT_AMOUNT.toString(), 18);
-      console.log(`Approving ${DEPOSIT_AMOUNT} GCCT tokens for TokenVault...`);
+      const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
+      console.log(`Approving ${depositAmount} GCCT tokens for TokenVault...`);
 
       // Explicitly approve the amount
       const approveTx = await gctToken.approve(tokenVault.address, tokenAmount);
@@ -101,12 +100,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
 
-      console.log(`Deposited ${DEPOSIT_AMOUNT} GCCT tokens.`);
-      setPoints((prevPoints) => prevPoints + DEPOSIT_AMOUNT); // Update points locally
+      console.log(`Deposited ${depositAmount} GCCT tokens.`);
+      setPoints(prevPoints => prevPoints + depositAmount); // Update points locally
       updatePoints(); // Fetch updated balance
     } catch (error) {
       console.error("Deposit failed:", error);
-      alert("Deposit failed. Please try again. If the spending cap is blank, manually enter the amount.");
+      alert(
+        "Deposit failed. Please try again. If the spending cap is blank, manually enter the amount."
+      );
     } finally {
       setDepositLoading(false);
     }
@@ -116,7 +117,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
   const spinSlots = () => {
     if (spinning || points < SPIN_COST) return; // Prevent spin if already spinning or insufficient points
     setSpinning(true);
-    setPoints((prevPoints) => prevPoints - SPIN_COST); // Deduct spin cost
+    setPoints(prevPoints => prevPoints - SPIN_COST); // Deduct spin cost
     playSound('spin');
 
     const spinInterval = setInterval(() => {
@@ -136,7 +137,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
         playSound('win');
         const winnings = payoutMultiplier * SPIN_COST;
         console.log(`You win! Payout multiplier: ${payoutMultiplier}x, winnings: ${winnings} points`);
-        setPoints((prevPoints) => prevPoints + winnings);
+        setPoints(prevPoints => prevPoints + winnings);
       } else {
         playSound('lose');
         console.log("No win. Better luck next time!");
@@ -144,58 +145,46 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account }) => {
     }, 3000); // Duration of spin
   };
 
-  // Withdraw accumulated balance from the vault with confirmation
-  const cashOut = async () => {
-    if (!tokenVault) return;
-
-    const confirmCashOut = window.confirm("Are you sure you want to cash out your points?");
-    if (!confirmCashOut) return;
-
-    try {
-      setLoading(true);
-
-      const withdrawAmount = ethers.utils.parseUnits(points.toString(), 18);
-      const withdrawTx = await tokenVault.withdraw(withdrawAmount);
-      await withdrawTx.wait();
-
-      console.log(`Cashed out ${points} tokens`);
-      setPoints(0); // Reset points after withdrawal
-    } catch (error) {
-      console.error('Cash out failed:', error);
-      alert("Cash out failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="slot-game">
       {(loading || depositLoading) && (
         <SpinnerOverlay>
           <Loader />
-          <p>{loading ? 'Processing Cash Out...' : 'Processing Deposit...'}</p>
+          <p>{loading ? "Processing Cash Out..." : "Processing Deposit..."}</p>
         </SpinnerOverlay>
       )}
       <div className="score-board">
         <h2>Points: {points}</h2>
       </div>
-      <button onClick={depositTokens} disabled={depositLoading}>
-        {depositLoading ? 'Depositing...' : `Deposit ${DEPOSIT_AMOUNT} Tokens`}
+      <div>
+        <label htmlFor="depositAmount" style={{ marginRight: "10px" }}>
+          Enter Deposit Amount:
+        </label>
+        <input
+          type="number"
+          id="depositAmount"
+          value={depositAmount}
+          onChange={(e) => setDepositAmount(Number(e.target.value))}
+          style={{
+            padding: "5px",
+            borderRadius: "5px",
+            border: "1px solid #28d850",
+            marginBottom: "10px",
+          }}
+        />
+      </div>
+      <button onClick={depositTokens} disabled={depositLoading || depositAmount <= 0}>
+        {depositLoading ? "Depositing..." : `Deposit ${depositAmount} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
-        {spinning ? 'Spinning...' : 'Spin'}
+        {spinning ? "Spinning..." : "Spin"}
       </button>
-      <button onClick={cashOut} disabled={loading || points === 0}>
-        {loading ? 'Processing Cash Out...' : 'Cash Out'}
+      <button disabled={loading || points === 0}>
+        {loading ? "Processing Cash Out..." : "Cash Out"}
       </button>
       <div className="slots">
         {displayedCombination.map((item, index) => (
-          <SlotItem
-            key={index}
-            revealed={!spinning}
-            good={item.good || false}
-            itemImage={item.image}
-          />
+          <SlotItem key={index} revealed={!spinning} good={item.good || false} itemImage={item.image} />
         ))}
       </div>
     </div>
