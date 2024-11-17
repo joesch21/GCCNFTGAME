@@ -49,9 +49,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       console.log(`Deposited ${depositAmount} GCCT tokens.`);
 
       setPoints((prevPoints) => prevPoints + depositAmount);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Deposit failed:', error);
-      alert('Failed to deposit tokens.');
+      alert(error.message || 'Failed to deposit tokens. Please try again.');
     } finally {
       setDepositLoading(false);
     }
@@ -67,16 +67,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       const withdrawTx = await tokenVault.withdraw(tokenAmount);
       await withdrawTx.wait();
       setPoints(0);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Cash out failed:', error);
-      alert('Cash out failed.');
+      alert(error.message || 'Cash out failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const spinSlots = () => {
-    if (spinning || points < SPIN_COST) return;
+    if (spinning || points < SPIN_COST) {
+      if (points < SPIN_COST) {
+        alert("You don't have enough points to spin. Deposit more tokens!");
+      }
+      return;
+    }
+
+    // Play spin sound
+    const spinSound = new Audio('/assets/spin.mp3');
+    spinSound.play();
 
     setSpinning(true);
     setPoints((prevPoints) => prevPoints - SPIN_COST);
@@ -101,6 +110,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
 
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
+        // Play win sound if payout occurs
+        const winSound = new Audio('/assets/win.mp3');
+        winSound.play();
+
         const winnings = payoutMultiplier * SPIN_COST;
         setPoints((prevPoints) => prevPoints + winnings);
       }
@@ -128,7 +141,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         {depositLoading ? 'Depositing...' : `Deposit ${depositAmount} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
-        {spinning ? 'Spinning...' : 'Spin'}
+        {spinning ? 'Spinning...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
       </button>
       <button onClick={cashOut} disabled={loading || points === 0}>
         {loading ? 'Processing Cash Out...' : 'Cash Out'}
