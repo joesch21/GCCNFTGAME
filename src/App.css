@@ -18,7 +18,7 @@
   overflow-x: hidden;
 }
 
-/* Background glitter effect */
+/* Glitter background */
 body::before {
   content: "";
   position: fixed;
@@ -31,7 +31,7 @@ body::before {
   z-index: -1;
 }
 
-/* Title with brighter green and glitter effect */
+/* Title with animation */
 .title {
   font-size: 2.5rem;
   margin-bottom: 10px;
@@ -52,12 +52,11 @@ header.navbar {
   background-image: url('assets/condortransparent.png');
   background-size: cover;
   background-position: center;
-  color: #fff; /* Adjust text color for better readability */
+  color: #fff;
   padding: 40px;
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
-
 
 nav ul {
   display: flex;
@@ -84,31 +83,26 @@ nav ul li a:hover {
   color: #28d850;
 }
 
-/* Flashing casino light border */
-@keyframes flashing-lights {
-  0%, 100% { box-shadow: 0px 0px 10px 4px #ffd700; }
-  50% { box-shadow: 0px 0px 15px 8px #ffa500; }
-}
-
+/* Slot game container */
 .slot-game {
   background: rgba(0, 0, 0, 0.8);
-  padding: 20px;
+  padding: 10px;
   border-radius: 10px;
   border: 2px solid #28d850;
   box-shadow: 0px 0px 10px 3px rgba(40, 216, 80, 0.6);
-  animation: flashing-lights 1.5s infinite alternate;
-  margin-top: 20px;
-  max-width: 90%;
+  margin-top: 10px;
+  max-width: 150%;
 }
 
-/* Slots container with slight padding */
+/* Slots grid */
 .slots {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Flexible layout */
+  gap: 8px;
+  margin-top: 10px;
   padding: 10px;
   background-color: rgba(34, 34, 34, 0.9);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -118,7 +112,7 @@ nav ul li a:hover {
   object-fit: contain;
 }
 
-/* Buttons with bright green and gold highlights */
+/* Buttons styling */
 button {
   background: linear-gradient(45deg, #28d850, #ffdd44);
   color: #222;
@@ -131,7 +125,7 @@ button {
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
   margin: 5px;
-  max-width: 90%;
+  width: 100%;
 }
 
 button:hover {
@@ -139,31 +133,17 @@ button:hover {
   background: linear-gradient(45deg, #105b2f, #ffdd44);
 }
 
-/* Footer styling */
-footer {
-  margin-top: auto;
-  padding: 10px;
-  font-size: 1em;
-  color: #28d850;
-  font-family: Arial, sans-serif;
-}
-
-/* Media queries for mobile responsiveness */
+/* Media queries for responsiveness */
 @media (max-width: 768px) {
   .title {
     font-size: 2rem;
   }
 
-  .navbar ul li a {
-    font-size: 1em;
-  }
-
   .slots {
-    flex-direction: column; /* Stack slot items vertically on mobile */
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
 
   button {
-    width: 100%;
     font-size: 0.9em;
   }
 
@@ -179,12 +159,8 @@ footer {
     margin-bottom: 15px;
   }
 
-  .navbar ul li {
-    margin: 0 5px;
-  }
-
-  .navbar ul li a {
-    font-size: 0.9em;
+  .slots {
+    grid-template-columns: repeat(2, 1fr); /* Adjust for smaller screens */
   }
 
   .slot-game {

@@ -1,10 +1,11 @@
-import { SLOT_ITEMS, SlotItem } from '../constants';
+import { SLOT_ITEMS, SlotItem, NUM_SLOTS } from '../constants';
 
 // Utility function to pick a random item from an array
 const pickRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 /**
  * Generates a simplified bet array for a given wager amount and max payout.
+ * Returns an array of multipliers for the given conditions.
  */
 export const generateBetArray = (
   maxPayout: number,
@@ -23,31 +24,32 @@ export const generateBetArray = (
     }
   }
 
-  console.log("Simplified Generated Bet Array:", arr);
+  console.log("Generated Bet Array:", arr);
   return arr;
 };
 
 /**
- * Generates a random slot combination of 3 items for a three-wheel slot machine.
+ * Generates a random slot combination based on the number of slots.
+ * Returns an array of `SlotItem` objects matching the specified number of slots.
  */
 export const getSlotCombination = (): SlotItem[] => {
-  return Array.from({ length: 3 }).map(() => {
-    const randomItem = SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)];
-    return { ...randomItem }; // Ensure new object reference for each item
+  return Array.from({ length: NUM_SLOTS }).map(() => {
+    const randomItem = pickRandom(SLOT_ITEMS);
+    return { ...randomItem }; // Return a new object for each item
   });
 };
 
 /**
- * Calculates the payout based on the final combination of three slot items.
+ * Calculates the payout based on the final combination of slot items.
  * Determines if there's a match and returns a payout multiplier.
  */
 export const calculatePayout = (combination: SlotItem[]): number => {
-  if (combination.length !== 3) {
-    console.error("Invalid slot combination length. Expected 3 items.");
+  if (combination.length !== NUM_SLOTS) {
+    console.error(`Invalid slot combination length. Expected ${NUM_SLOTS} items.`);
     return 0;
   }
 
-  const itemCounts: { [key: string]: number } = {};
+  const itemCounts: Record<string, number> = {};
 
   // Count occurrences of each image in the combination
   combination.forEach((item) => {
@@ -60,14 +62,29 @@ export const calculatePayout = (combination: SlotItem[]): number => {
   // Determine payout based on matches
   const values = Object.values(itemCounts);
 
-  if (values.includes(3)) {
-    // All three symbols match — highest payout (Jackpot)
-    return combination[0].multiplier * 10;
-  } else if (values.includes(2)) {
-    // Two symbols match — medium payout
-    return combination.find(item => itemCounts[item.image] === 2)!.multiplier * 3;
+  if (values.includes(6)) {
+    // All 6 symbols match — Jackpot
+    console.log("Jackpot! All symbols match.");
+    return combination[0].multiplier * 20;
+  } else if (values.includes(5)) {
+    // 5 out of 6 symbols match — High payout
+    console.log("High payout! 5 symbols match.");
+    const matchingItem = combination.find(item => itemCounts[item.image] === 5);
+    return matchingItem ? matchingItem.multiplier * 10 : 0;
+  } else if (values.includes(4)) {
+    // 4 out of 6 symbols match — Medium payout
+    console.log("Medium payout! 4 symbols match.");
+    const matchingItem = combination.find(item => itemCounts[item.image] === 4);
+    return matchingItem ? matchingItem.multiplier * 5 : 0;
+  } else if (values.includes(3)) {
+    // 3 out of 6 symbols match — Low payout
+    console.log("Low payout! 3 symbols match.");
+    const matchingItem = combination.find(item => itemCounts[item.image] === 3);
+    return matchingItem ? matchingItem.multiplier * 2 : 0;
   } else {
-    // No matches — no payout
+    // Fewer than 3 matches — No payout
+    console.log("No matches, no payout.");
     return 0;
   }
 };
+

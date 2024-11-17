@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import SlotItem from './SlotItem';
-import { SLOT_ITEMS, SPIN_COST, CONTRACT_ADDRESSES } from '../constants';
-import { getSlotCombination, calculatePayout } from '../utils/utils';
+import { SLOT_ITEMS, SPIN_COST, NUM_SLOTS, CONTRACT_ADDRESSES } from '../constants';
+import { calculatePayout } from '../utils/utils';
 import { SpinnerOverlay, Loader } from './Slot.styles';
 
 interface SlotMachineProps {
@@ -13,11 +13,13 @@ interface SlotMachineProps {
 
 const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) => {
   const [spinning, setSpinning] = useState(false);
-  const [displayedCombination, setDisplayedCombination] = useState(Array(3).fill(SLOT_ITEMS[0]));
+  const [displayedCombination, setDisplayedCombination] = useState(
+    Array(NUM_SLOTS).fill(SLOT_ITEMS[0])
+  );
   const [points, setPoints] = useState(0);
-  const [loading, setLoading] = useState(false); // For cash-out
+  const [loading, setLoading] = useState(false);
   const [depositLoading, setDepositLoading] = useState(false);
-  const [depositAmount, setDepositAmount] = useState<number>(10);
+  const [depositAmount, setDepositAmount] = useState<number>(100);
 
   const tokenVault = signer
     ? new ethers.Contract(CONTRACT_ADDRESSES.TOKEN_VAULT, require('../TokenVault.json'), signer)
@@ -37,7 +39,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.TOKEN_VAULT);
 
       if (currentAllowance.lt(tokenAmount)) {
-        console.log("Approving spending cap...");
+        console.log('Approving spending cap...');
         const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.TOKEN_VAULT, tokenAmount);
         await approveTx.wait();
       }
@@ -46,10 +48,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       await depositTx.wait();
       console.log(`Deposited ${depositAmount} GCCT tokens.`);
 
-      setPoints(prevPoints => prevPoints + depositAmount);
+      setPoints((prevPoints) => prevPoints + depositAmount);
     } catch (error) {
-      console.error("Deposit failed:", error);
-      alert("Failed to deposit tokens.");
+      console.error('Deposit failed:', error);
+      alert('Failed to deposit tokens.');
     } finally {
       setDepositLoading(false);
     }
@@ -66,8 +68,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       await withdrawTx.wait();
       setPoints(0);
     } catch (error) {
-      console.error("Cash out failed:", error);
-      alert("Cash out failed.");
+      console.error('Cash out failed:', error);
+      alert('Cash out failed.');
     } finally {
       setLoading(false);
     }
@@ -77,24 +79,30 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     if (spinning || points < SPIN_COST) return;
 
     setSpinning(true);
-    setPoints(prevPoints => prevPoints - SPIN_COST);
+    setPoints((prevPoints) => prevPoints - SPIN_COST);
 
+    // Create spinning effect
     const spinInterval = setInterval(() => {
-      const newCombination = getSlotCombination();
+      const newCombination = Array.from({ length: NUM_SLOTS }).map(() =>
+        SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
+      );
       setDisplayedCombination(newCombination);
     }, 100);
 
+    // Stop spinning and calculate results
     setTimeout(() => {
       clearInterval(spinInterval);
       setSpinning(false);
 
-      const finalCombination = getSlotCombination();
+      const finalCombination = Array.from({ length: NUM_SLOTS }).map(() =>
+        SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
+      );
       setDisplayedCombination(finalCombination);
 
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
         const winnings = payoutMultiplier * SPIN_COST;
-        setPoints(prevPoints => prevPoints + winnings);
+        setPoints((prevPoints) => prevPoints + winnings);
       }
     }, 3000);
   };
@@ -104,7 +112,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       {(loading || depositLoading) && (
         <SpinnerOverlay>
           <Loader />
-          <p>{loading ? "Processing Cash Out..." : "Processing Deposit..."}</p>
+          <p>{loading ? 'Processing Cash Out...' : 'Processing Deposit...'}</p>
         </SpinnerOverlay>
       )}
       <div className="score-board">
@@ -114,15 +122,16 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         type="number"
         value={depositAmount}
         onChange={(e) => setDepositAmount(Number(e.target.value))}
+        disabled={depositLoading}
       />
       <button onClick={depositTokens} disabled={depositLoading || depositAmount <= 0}>
-        {depositLoading ? "Depositing..." : `Deposit ${depositAmount} Tokens`}
+        {depositLoading ? 'Depositing...' : `Deposit ${depositAmount} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
-        {spinning ? "Spinning..." : "Spin"}
+        {spinning ? 'Spinning...' : 'Spin'}
       </button>
       <button onClick={cashOut} disabled={loading || points === 0}>
-        {loading ? "Processing Cash Out..." : "Cash Out"}
+        {loading ? 'Processing Cash Out...' : 'Cash Out'}
       </button>
       <div className="slots">
         {displayedCombination.map((item, index) => (

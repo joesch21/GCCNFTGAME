@@ -60,7 +60,10 @@ const Slot: React.FC<SlotProps> = ({ revealed, good, itemImage }) => {
     `${process.env.PUBLIC_URL}/slot-unicorn.png`,
     `${process.env.PUBLIC_URL}/slot-emoji-cool.png`,
     `${process.env.PUBLIC_URL}/slot-wojak.png`,
-    `${process.env.PUBLIC_URL}/slot-smiley.png`,  // Add more if desired
+    `${process.env.PUBLIC_URL}/slot-smiley.png`,
+    `${process.env.PUBLIC_URL}/slot-emoji-hearts.png`,
+    `${process.env.PUBLIC_URL}/slot-2x.png`,
+
   ];
 
   useEffect(() => {

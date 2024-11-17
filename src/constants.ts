@@ -13,7 +13,7 @@ export const CONTRACT_ADDRESSES = {
 };
 
 // Define the cost per spin
-export const SPIN_COST = 1;
+export const SPIN_COST = 10;
 
 // Interface for a slot item with a multiplier and image
 export interface SlotItem {
@@ -23,16 +23,16 @@ export interface SlotItem {
 
 // Slot items for the slot machine
 export const SLOT_ITEMS: SlotItem[] = [
-  { multiplier: 7, image: IMAGE_UNICORN },
-  { multiplier: 5, image: IMAGE_5X },
-  { multiplier: 3, image: IMAGE_3X },
-  { multiplier: 2, image: IMAGE_2X },
-  { multiplier: 1, image: IMAGE_COOL },
-  { multiplier: 0.5, image: IMAGE_WOJAK },
+  { multiplier: 5, image: IMAGE_UNICORN },
+  { multiplier: 3, image: IMAGE_5X },
+  { multiplier: 2, image: IMAGE_3X },
+  { multiplier: 1, image: IMAGE_2X },
+  { multiplier: 0.5, image: IMAGE_COOL },
+  { multiplier: 0.05, image: IMAGE_WOJAK },
 ];
 
 // Number of slots for the slot machine
-export const NUM_SLOTS = 3;
+export const NUM_SLOTS = 6;
 
 // Delay for each spin cycle, adjust for visual effect
 export const SPIN_DELAY = 500;

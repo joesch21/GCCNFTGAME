@@ -11,15 +11,16 @@ export const StyledSlots = styled.div`
   justify-content: center;
 
   .slots {
-    display: flex;
-    gap: 15px; /* Adjust gap for spacing between slot items */
-    justify-content: center; /* Center the slot items horizontally */
-    align-items: center; /* Center the slot items vertically */
-    width: 100%;
-    box-sizing: border-box;
-    border-radius: 10px;
-    padding: 20px; /* Add padding if needed for spacing */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); /* Adjust for responsiveness */
+  gap: 10px;
+  margin-top: 20px;
+  padding: 10px;
+  background-color: rgba(34, 34, 34, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   }
+
 
   .slotImage {
     aspect-ratio: 1 / 1;
