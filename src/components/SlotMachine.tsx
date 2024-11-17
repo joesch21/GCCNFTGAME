@@ -29,11 +29,17 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     ? new ethers.Contract(CONTRACT_ADDRESSES.GCC_TOKEN, require('../GCCToken.json'), signer)
     : null;
 
+  const playSound = (soundFile: string) => {
+    const sound = new Audio(soundFile);
+    sound.play();
+  };
+
   const depositTokens = async () => {
     if (!gctToken || !tokenVault || depositAmount <= 0) return;
 
     try {
       setDepositLoading(true);
+      playSound('/money.mp3'); // Play deposit sound
 
       const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.TOKEN_VAULT);
@@ -83,12 +89,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       return;
     }
 
-    // Play spin sound
-    const spinSound = new Audio('/assets/spin.mp3');
-    spinSound.play();
+    playSound('/play.mp3'); // Play spin button sound
 
     setSpinning(true);
     setPoints((prevPoints) => prevPoints - SPIN_COST);
+
+    playSound('/spin.mp3'); // Play spinning sound
 
     // Create spinning effect
     const spinInterval = setInterval(() => {
@@ -108,14 +114,15 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       );
       setDisplayedCombination(finalCombination);
 
+      playSound('/reveal.mp3'); // Play reveal sound
+
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
-        // Play win sound if payout occurs
-        const winSound = new Audio('/assets/win.mp3');
-        winSound.play();
-
         const winnings = payoutMultiplier * SPIN_COST;
         setPoints((prevPoints) => prevPoints + winnings);
+        playSound('/win.mp3'); // Play win sound
+      } else {
+        playSound('/lose.mp3'); // Play lose sound
       }
     }, 3000);
   };
