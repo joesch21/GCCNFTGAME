@@ -225,7 +225,7 @@ const App: React.FC = () => {
             <p>Approving spending cap... Please wait.</p>
           </div>
         )}
-        <h2 className="subtitle">Glimp GCC Game</h2>
+        <h2 className="subtitle">Gimp GCC Game</h2>
         <SlotMachine
           account={connectedAccount}
           provider={provider}

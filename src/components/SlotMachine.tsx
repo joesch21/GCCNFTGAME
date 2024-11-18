@@ -88,14 +88,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       }
       return;
     }
-
+  
     playSound('/play.mp3'); // Play spin button sound
-
+  
     setSpinning(true);
     setPoints((prevPoints) => prevPoints - SPIN_COST);
-
+  
     playSound('/spin.mp3'); // Play spinning sound
-
+  
     // Create spinning effect
     const spinInterval = setInterval(() => {
       const newCombination = Array.from({ length: NUM_SLOTS }).map(() =>
@@ -103,19 +103,19 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       );
       setDisplayedCombination(newCombination);
     }, 100);
-
+  
     // Stop spinning and calculate results
     setTimeout(() => {
       clearInterval(spinInterval);
       setSpinning(false);
-
+  
       const finalCombination = Array.from({ length: NUM_SLOTS }).map(() =>
         SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
       );
       setDisplayedCombination(finalCombination);
-
+  
       playSound('/reveal.mp3'); // Play reveal sound
-
+  
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
         const winnings = payoutMultiplier * SPIN_COST;
@@ -126,6 +126,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       }
     }, 3000);
   };
+  
 
   return (
     <div className="slot-game">
@@ -148,7 +149,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         {depositLoading ? 'Depositing...' : `Deposit ${depositAmount} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
-        {spinning ? 'Spinning...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
+        {spinning ? 'Spinning NOW...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
       </button>
       <button onClick={cashOut} disabled={loading || points === 0}>
         {loading ? 'Processing Cash Out...' : 'Cash Out'}

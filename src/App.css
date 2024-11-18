@@ -1,3 +1,4 @@
+/*App.css 
 /* Base styling for responsiveness */
 * {
   box-sizing: border-box;
@@ -35,10 +36,10 @@ body::before {
 .title {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  color: #880b88;
+  color: #04174c;
   text-shadow: 0px 0px 8px #0e2806, 0px 0px 15px #0e7a1f;
   font-family: 'Impact', sans-serif;
-  animation: glitter 1s infinite alternate;
+  animation: glitter 3s infinite alternate;
 }
 
 @keyframes glitter {
@@ -72,7 +73,7 @@ nav ul li {
 }
 
 nav ul li a {
-  color: #762727;
+  color: #431212;
   text-decoration: none;
   font-size: 1.2em;
   font-weight: bold;
@@ -85,8 +86,8 @@ nav ul li a:hover {
 
 /* Slot game container */
 .slot-game {
-  background: rgba(0, 0, 0, 0.8);
-  padding: 10px;
+  background: rgba(108, 27, 5, 0.8);
+  padding: 20px;
   border-radius: 10px;
   border: 2px solid #28d850;
   box-shadow: 0px 0px 10px 3px rgba(40, 216, 80, 0.6);
@@ -181,5 +182,19 @@ button:hover {
 
   footer {
     font-size: 0.9em;
+  }
+}
+
+@media (max-width: 768px) {
+  .slots {
+    grid-template-columns: repeat(2, 1fr); /* Switch to 2 columns */
+    gap: 10px; /* Adjust gap for smaller screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .slots {
+    grid-template-columns: repeat(2, 1fr); /* Retain 2 columns for very small screens */
+    gap: 8px;
   }
 }

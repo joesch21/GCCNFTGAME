@@ -25,7 +25,7 @@ const revealAnimation = keyframes`
 `;
 
 const StyledSlot = styled.div<{ $good: boolean }>`
-  width: 100px;
+  width: 70px;
   height: 150px;
   border: 2px solid ${({ $good }) => ($good ? '#4CAF50' : '#2d2d57')};
   background-color: rgba(68, 68, 255, 0.1);
@@ -40,7 +40,7 @@ const StyledSlot = styled.div<{ $good: boolean }>`
           animation: ${revealAnimation} 0.5s ease-out forwards;
         `
       : 'none'};
-  border-radius: 8px;
+  border-radius: 10px;
 `;
 
 const FlickerImage = styled.img<{ $flickering: boolean }>`

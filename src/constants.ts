@@ -23,16 +23,17 @@ export interface SlotItem {
 
 // Slot items for the slot machine
 export const SLOT_ITEMS: SlotItem[] = [
-  { multiplier: 5, image: IMAGE_UNICORN },
-  { multiplier: 3, image: IMAGE_5X },
-  { multiplier: 2, image: IMAGE_3X },
-  { multiplier: 1, image: IMAGE_2X },
+  { multiplier: 10, image: IMAGE_UNICORN }, // Rare item with high multiplier
+  { multiplier: 7, image: IMAGE_5X },
+  { multiplier: 5, image: IMAGE_3X },
+  { multiplier: 2, image: IMAGE_2X },
+  { multiplier: 1, image: IMAGE_HEARTS },
   { multiplier: 0.5, image: IMAGE_COOL },
-  { multiplier: 0.05, image: IMAGE_WOJAK },
+  { multiplier: 0.2, image: IMAGE_WOJAK },
 ];
 
 // Number of slots for the slot machine
-export const NUM_SLOTS = 6;
+export const NUM_SLOTS = 10;
 
 // Delay for each spin cycle, adjust for visual effect
 export const SPIN_DELAY = 500;

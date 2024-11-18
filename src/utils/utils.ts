@@ -59,32 +59,35 @@ export const calculatePayout = (combination: SlotItem[]): number => {
   // Debugging log to check counts
   console.log("Item counts:", itemCounts);
 
-  // Determine payout based on matches
-  const values = Object.values(itemCounts);
+  // Get the highest count of matches
+  const maxMatchCount = Math.max(...Object.values(itemCounts));
 
-  if (values.includes(6)) {
-    // All 6 symbols match — Jackpot
-    console.log("Jackpot! All symbols match.");
-    return combination[0].multiplier * 20;
-  } else if (values.includes(5)) {
-    // 5 out of 6 symbols match — High payout
-    console.log("High payout! 5 symbols match.");
-    const matchingItem = combination.find(item => itemCounts[item.image] === 5);
-    return matchingItem ? matchingItem.multiplier * 10 : 0;
-  } else if (values.includes(4)) {
-    // 4 out of 6 symbols match — Medium payout
-    console.log("Medium payout! 4 symbols match.");
-    const matchingItem = combination.find(item => itemCounts[item.image] === 4);
-    return matchingItem ? matchingItem.multiplier * 5 : 0;
-  } else if (values.includes(3)) {
-    // 3 out of 6 symbols match — Low payout
-    console.log("Low payout! 3 symbols match.");
-    const matchingItem = combination.find(item => itemCounts[item.image] === 3);
-    return matchingItem ? matchingItem.multiplier * 2 : 0;
-  } else {
-    // Fewer than 3 matches — No payout
-    console.log("No matches, no payout.");
-    return 0;
+  // Determine payout based on the number of matches
+  switch (maxMatchCount) {
+    case 10:
+      console.log("Jackpot! All symbols match.");
+      return combination[0].multiplier * 50; // Jackpot payout
+    case 9:
+      console.log("Very high payout! 9 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 9)!.multiplier * 25;
+    case 8:
+      console.log("High payout! 8 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 8)!.multiplier * 15;
+    case 7:
+      console.log("Medium-high payout! 7 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 7)!.multiplier * 10;
+    case 6:
+      console.log("Medium payout! 6 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 6)!.multiplier * 7;
+    case 5:
+      console.log("Low payout! 5 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 5)!.multiplier * 5;
+    case 4:
+      console.log("Small payout! 4 symbols match.");
+      return combination.find(item => itemCounts[item.image] === 4)!.multiplier * 2;
+    default:
+      console.log("No matches, no payout.");
+      return 0; // No payout
   }
 };
 
