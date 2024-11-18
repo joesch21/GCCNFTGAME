@@ -3,7 +3,14 @@ import { ethers } from 'ethers';
 import SlotItem from './SlotItem';
 import { SLOT_ITEMS, SPIN_COST, NUM_SLOTS, CONTRACT_ADDRESSES } from '../constants';
 import { calculatePayout } from '../utils/utils';
-import { SpinnerOverlay, Loader } from './Slot.styles';
+import {
+  SpinnerOverlay,
+  Loader,
+  StreamingSymbolsContainer,
+  StreamingSymbol,
+  StyledSlot,
+  FlickerImage,
+} from './Slot.styles';
 
 interface SlotMachineProps {
   account: string | null;
@@ -20,6 +27,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   const [loading, setLoading] = useState(false);
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositAmount, setDepositAmount] = useState<number>(100);
+  const [streamingSymbols, setStreamingSymbols] = useState<string[]>([]);
+  const [streamDirection, setStreamDirection] = useState<'horizontal' | 'vertical'>('horizontal');
 
   const tokenVault = signer
     ? new ethers.Contract(CONTRACT_ADDRESSES.TOKEN_VAULT, require('../TokenVault.json'), signer)
@@ -39,25 +48,22 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
 
     try {
       setDepositLoading(true);
-      playSound('/money.mp3'); // Play deposit sound
+      playSound('/money.mp3');
 
       const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.TOKEN_VAULT);
 
       if (currentAllowance.lt(tokenAmount)) {
-        console.log('Approving spending cap...');
         const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.TOKEN_VAULT, tokenAmount);
         await approveTx.wait();
       }
 
       const depositTx = await tokenVault.deposit(tokenAmount);
       await depositTx.wait();
-      console.log(`Deposited ${depositAmount} GCCT tokens.`);
-
       setPoints((prevPoints) => prevPoints + depositAmount);
     } catch (error: any) {
       console.error('Deposit failed:', error);
-      alert(error.message || 'Failed to deposit tokens. Please try again.');
+      alert(error.message || 'Failed to deposit tokens.');
     } finally {
       setDepositLoading(false);
     }
@@ -75,7 +81,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       setPoints(0);
     } catch (error: any) {
       console.error('Cash out failed:', error);
-      alert(error.message || 'Cash out failed. Please try again.');
+      alert(error.message || 'Cash out failed.');
     } finally {
       setLoading(false);
     }
@@ -83,50 +89,48 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
 
   const spinSlots = () => {
     if (spinning || points < SPIN_COST) {
-      if (points < SPIN_COST) {
-        alert("You don't have enough points to spin. Deposit more tokens!");
-      }
+      if (points < SPIN_COST) alert("You don't have enough points to spin.");
       return;
     }
-  
-    playSound('/play.mp3'); // Play spin button sound
-  
+
+    playSound('/play.mp3');
     setSpinning(true);
     setPoints((prevPoints) => prevPoints - SPIN_COST);
-  
-    playSound('/spin.mp3'); // Play spinning sound
-  
-    // Create spinning effect
+    playSound('/spin.mp3');
+
     const spinInterval = setInterval(() => {
       const newCombination = Array.from({ length: NUM_SLOTS }).map(() =>
         SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
       );
       setDisplayedCombination(newCombination);
     }, 100);
-  
-    // Stop spinning and calculate results
+
     setTimeout(() => {
       clearInterval(spinInterval);
       setSpinning(false);
-  
+
       const finalCombination = Array.from({ length: NUM_SLOTS }).map(() =>
         SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
       );
       setDisplayedCombination(finalCombination);
-  
-      playSound('/reveal.mp3'); // Play reveal sound
-  
+      playSound('/reveal.mp3');
+
       const payoutMultiplier = calculatePayout(finalCombination);
       if (payoutMultiplier > 0) {
         const winnings = payoutMultiplier * SPIN_COST;
         setPoints((prevPoints) => prevPoints + winnings);
-        playSound('/win.mp3'); // Play win sound
+        playSound('/win.mp3');
+
+        const winningSymbols = finalCombination.map((item) => item.image);
+        setStreamingSymbols(winningSymbols);
+        setStreamDirection(Math.random() > 0.5 ? 'horizontal' : 'vertical');
+
+        setTimeout(() => setStreamingSymbols([]), 3000);
       } else {
-        playSound('/lose.mp3'); // Play lose sound
+        playSound('/lose.mp3');
       }
     }, 3000);
   };
-  
 
   return (
     <div className="slot-game">
@@ -146,7 +150,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         disabled={depositLoading}
       />
       <button onClick={depositTokens} disabled={depositLoading || depositAmount <= 0}>
-        {depositLoading ? 'Depositing...' : `Deposit ${depositAmount} Tokens`}
+        {depositLoading ? 'Depositing GCCT...' : `Deposit ${depositAmount} Tokens`}
       </button>
       <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
         {spinning ? 'Spinning NOW...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
@@ -156,9 +160,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       </button>
       <div className="slots">
         {displayedCombination.map((item, index) => (
-          <SlotItem key={index} revealed={!spinning} good={item.good || false} itemImage={item.image} />
+          <SlotItem
+            key={index}
+            revealed={!spinning}
+            spinning={spinning} // Pass spinning state to SlotItem
+            good={item.good || false}
+            itemImage={item.image}
+          />
         ))}
       </div>
+
+      {streamingSymbols.length > 0 && (
+        <StreamingSymbolsContainer>
+          {streamingSymbols.map((symbol, index) => (
+            <StreamingSymbol key={index} direction={streamDirection}>
+              <img src={symbol} alt="streaming-symbol" />
+            </StreamingSymbol>
+          ))}
+        </StreamingSymbolsContainer>
+      )}
     </div>
   );
 };

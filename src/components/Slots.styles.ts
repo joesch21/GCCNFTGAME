@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const StyledSlots = styled.div`
-  perspective: 100px;
+  perspective: 120px;
   user-select: none;
   display: flex;
   flex-direction: column;
