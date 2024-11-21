@@ -5,12 +5,14 @@ import navbarBackground from "./assets/condortransparent.png";
 import onboard from "./utils/walletProvider"; // Import walletProvider
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESSES } from "./constants"; // Import constants
+import ClaimButton from "./components/ClaimButton"; // Import ClaimButton component
 
 const App: React.FC = () => {
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
   const [approvalLoading, setApprovalLoading] = useState(false); // State for spending cap approval
+  const [cooldownMessage, setCooldownMessage] = useState<string>(""); // Cooldown status message
 
   // Function to connect to MetaMask using Web3-Onboard
   const connectWallet = async () => {
@@ -28,6 +30,7 @@ const App: React.FC = () => {
 
         // Initiate spending cap approval immediately after connecting
         preApproveHighSpendingCap(walletSigner, account);
+        checkCooldown(walletSigner, account); // Check cooldown status after connecting
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
@@ -72,49 +75,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Function to add GCCT token to the user's MetaMask
-  const addGCCToken = async () => {
-    if (!provider) return;
-
-    try {
-      const wasAdded = await (provider as any).send("wallet_watchAsset", {
-        type: "ERC20", // Token type
-        options: {
-          address: CONTRACT_ADDRESSES.GCC_TOKEN, // Your token's contract address
-          symbol: "GCCT", // Your token symbol
-          decimals: 18, // Number of decimals
-          image: `${window.location.origin}/LOGO.png`, // Path to the token logo in 'public'
-        },
-      });
-
-      if (wasAdded) {
-        console.log("GCCT Token successfully added to MetaMask!");
-        alert("GCCT Token successfully added to your wallet!");
-      } else {
-        console.log("User declined to add the GCCT Token.");
-      }
-    } catch (error) {
-      console.error("Failed to add GCCT Token:", error);
-      alert("Failed to add GCCT Token. Please try again.");
-    }
-  };
-
-  // Function to disconnect from MetaMask using Web3-Onboard
-  const disconnectWallet = async () => {
-    try {
-      if (connectedAccount) {
-        await onboard.disconnectWallet({ label: "MetaMask" });
-        setConnectedAccount(null);
-        setProvider(null);
-        setSigner(null);
-        console.log("Wallet disconnected");
-      }
-    } catch (error) {
-      console.error("Failed to disconnect wallet:", error);
-    }
-  };
-
-  // Automatically switch to BNB Testnet if not already connected
+  // Function to switch to BNB Testnet
   const switchToTestnet = async () => {
     if (!provider) return;
 
@@ -149,11 +110,63 @@ const App: React.FC = () => {
     }
   };
 
+  // Function to disconnect from MetaMask using Web3-Onboard
+  const disconnectWallet = async () => {
+    try {
+      if (connectedAccount) {
+        await onboard.disconnectWallet({ label: "MetaMask" });
+        setConnectedAccount(null);
+        setProvider(null);
+        setSigner(null);
+        console.log("Wallet disconnected");
+      }
+    } catch (error) {
+      console.error("Failed to disconnect wallet:", error);
+    }
+  };
+
+  // Check the cooldown period status
+  const checkCooldown = async (signer: ethers.providers.JsonRpcSigner, account: string) => {
+    try {
+      const gctTokenContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.GCC_TOKEN,
+        require("./GCCToken.json"),
+        signer
+      );
+
+      const lastClaimed = await gctTokenContract.getLastClaimed(account); // Replace with actual contract method
+      const cooldownPeriod = await gctTokenContract.cooldownPeriod(); // Replace with actual contract method
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      if (currentTime < lastClaimed + cooldownPeriod) {
+        const waitTime = lastClaimed + cooldownPeriod - currentTime;
+        setCooldownMessage(
+          `Please wait ${waitTime} seconds before claiming again.`
+        );
+      } else {
+        setCooldownMessage("You are eligible to claim your tokens.");
+      }
+    } catch (error) {
+      console.error("Failed to check cooldown period:", error);
+      setCooldownMessage("Error fetching cooldown status. Please try again.");
+    }
+  };
+
+  // Open Faucet Link in a Popup Window
+  const openFaucet = () => {
+    window.open(
+      "https://testnet.binance.org/faucet-smart",
+      "_blank",
+      "width=800,height=600,scrollbars=yes"
+    );
+  };
+
   useEffect(() => {
-    if (connectedAccount && provider) {
+    if (connectedAccount && signer) {
+      checkCooldown(signer, connectedAccount); // Check cooldown on account change
       switchToTestnet(); // Switch to BNB Testnet automatically after connecting
     }
-  }, [connectedAccount, provider]);
+  }, [connectedAccount, signer]);
 
   return (
     <div className="app">
@@ -193,29 +206,6 @@ const App: React.FC = () => {
                 {connectedAccount ? "Connected" : "Connect Wallet"}
               </button>
             </li>
-            {connectedAccount && (
-              <li>
-                <button
-                  onClick={addGCCToken}
-                  style={{
-                    background: "linear-gradient(45deg, #28a745, #ffc107)", // Green for Add Token
-                    color: "#fff",
-                    border: "2px solid #28a745",
-                    borderRadius: "8px",
-                    padding: "8px 16px",
-                    fontSize: "1em",
-                    fontWeight: "bold",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    transition: "transform 0.2s, background 0.2s",
-                    margin: "5px",
-                    maxWidth: "90%",
-                  }}
-                >
-                  Load GCCT Token
-                </button>
-              </li>
-            )}
           </ul>
         </nav>
       </header>
@@ -226,11 +216,31 @@ const App: React.FC = () => {
           </div>
         )}
         <h2 className="subtitle">Gimp GCC Game</h2>
+        <p style={{ color: "blue", textAlign: "center" }}>{cooldownMessage}</p>
         <SlotMachine
           account={connectedAccount}
           provider={provider}
           signer={signer}
         />
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <p>Once you have Test BNB, claim your GCC tokens to start playing.</p>
+          <ClaimButton />
+          <button
+            onClick={openFaucet}
+            style={{
+              marginTop: "10px",
+              padding: "10px 20px",
+              backgroundColor: "#f0ad4e",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "1em",
+            }}
+          >
+            Get Free BNB from Faucet
+          </button>
+        </div>
       </main>
       <footer>
         <p>Enjoy playing! Good luck!</p>
