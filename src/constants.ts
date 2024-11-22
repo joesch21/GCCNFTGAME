@@ -33,7 +33,7 @@ export const SLOT_ITEMS: SlotItem[] = [
 ];
 
 // Number of slots for the slot machine
-export const NUM_SLOTS = 10;
+export const NUM_SLOTS = 9;
 
 // Delay for each spin cycle, adjust for visual effect
 export const SPIN_DELAY = 500;

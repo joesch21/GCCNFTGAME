@@ -1,57 +1,59 @@
-//SlotItem.tsx
-
-import React, { useState, useEffect } from 'react';
-import { StyledSlot, FlickerImage } from './Slot.styles';
+import React, { useEffect, useState } from 'react';
+import { StyledSlotItem, RotatingImageWrapper, RotatingImage } from './Slot.styles';
 
 interface SlotItemProps {
-  revealed: boolean;
-  spinning: boolean; // Prop to handle spinning animation
+  revealed: boolean; // Indicates if the slot has been revealed
+  spinning: boolean; // Indicates if the slot is currently spinning
   good: boolean; // Indicates if the slot item is part of a win
-  itemImage: string; // The image to display when revealed
+  itemImage: string; // The final image to display when revealed
+  direction?: 'vertical' | 'horizontal'; // Direction of the spin animation
 }
 
-const SlotItem: React.FC<SlotItemProps> = ({ revealed, spinning, good, itemImage }) => {
-  const [displayedImage, setDisplayedImage] = useState<string>(itemImage); // Image being displayed
-  const [flickering, setFlickering] = useState<boolean>(true); // Flickering animation state
-
-  // Placeholder images for random animation during spin
-  const placeholderImages = [
-    `${process.env.PUBLIC_URL}/slot-unicorn.png`,
-    `${process.env.PUBLIC_URL}/slot-emoji-cool.png`,
-    `${process.env.PUBLIC_URL}/slot-wojak.png`,
-    `${process.env.PUBLIC_URL}/slot-smiley.png`,
-    `${process.env.PUBLIC_URL}/slot-emoji-hearts.png`,
-    `${process.env.PUBLIC_URL}/slot-2x.png`,
-  ];
+const SlotItem: React.FC<SlotItemProps> = ({
+  revealed,
+  spinning,
+  good,
+  itemImage,
+  direction = 'vertical',
+}) => {
+  const [displayedImage, setDisplayedImage] = useState<string>(itemImage);
+  const [placeholderImages, setPlaceholderImages] = useState<string[]>([]);
 
   useEffect(() => {
-    let flickerInterval: NodeJS.Timeout;
+    // Define placeholder images for spinning animation
+    const images = [
+      `${process.env.PUBLIC_URL}/slot-unicorn.png`,
+      `${process.env.PUBLIC_URL}/slot-emoji-cool.png`,
+      `${process.env.PUBLIC_URL}/slot-wojak.png`,
+      `${process.env.PUBLIC_URL}/slot-smiley.png`,
+      `${process.env.PUBLIC_URL}/slot-emoji-hearts.png`,
+      `${process.env.PUBLIC_URL}/slot-2x.png`,
+    ];
+    setPlaceholderImages(images);
+  }, []);
 
-    if (spinning) {
-      // While spinning, set random images from placeholders
-      setFlickering(true);
-      flickerInterval = setInterval(() => {
-        const randomIndex = Math.floor(Math.random() * placeholderImages.length);
-        setDisplayedImage(placeholderImages[randomIndex]);
-      }, 100); // Change image every 100ms
-    } else if (revealed) {
-      // Stop flickering and show the final image
-      setFlickering(false);
+  useEffect(() => {
+    if (!spinning && revealed) {
+      // Show the final image when spinning stops
       setDisplayedImage(itemImage);
     }
-
-    return () => clearInterval(flickerInterval); // Cleanup interval on unmount
-  }, [spinning, revealed, itemImage, placeholderImages]);
+  }, [spinning, revealed, itemImage]);
 
   return (
-    <StyledSlot $spinning={spinning} $good={good}>
-      <FlickerImage
-        src={displayedImage}
-        alt="slot item"
-        $flickering={spinning} // Flickering only during spinning
-        onError={() => setDisplayedImage(`${process.env.PUBLIC_URL}/slot-unicorn.png`)} // Fallback image
-      />
-    </StyledSlot>
+    <StyledSlotItem $spinning={spinning} $good={good}>
+      <RotatingImageWrapper $spinning={spinning} $direction={direction}>
+        {(spinning ? placeholderImages : [displayedImage]).map((image, index) => (
+          <RotatingImage
+            key={index}
+            src={image}
+            alt="slot item"
+            onError={() =>
+              setDisplayedImage(`${process.env.PUBLIC_URL}/slot-unicorn.png`)
+            } // Fallback image
+          />
+        ))}
+      </RotatingImageWrapper>
+    </StyledSlotItem>
   );
 };
 

@@ -43,3 +43,23 @@ export const ballMotion = keyframes`
   75% { transform: translate(10px, -10px); }
   100% { transform: translate(0, 0); }
 `;
+
+// Vertical spin animation
+export const verticalSpin = keyframes`
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+`;
+
+// Horizontal spin animation
+export const horizontalSpin = keyframes`
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+`;
