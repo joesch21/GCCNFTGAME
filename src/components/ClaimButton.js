@@ -17,33 +17,23 @@ const ClaimButton = () => {
 
       // Create an ethers provider
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-      // Ensure connected to the correct network (BNB Testnet)
-      const switchNetwork = async () => {
-        try {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x61" }], // Example: BNB Testnet
-          });
-        } catch (switchError) {
-          if (switchError.code === 4902) {
-            alert("Please add the network to MetaMask and try again.");
-          } else {
-            console.error("Failed to switch network:", switchError);
-            throw switchError;
-          }
-        }
-      };
-      await switchNetwork();
-
-      // Get the signer
       const signer = provider.getSigner();
+
+      // Check TBNB balance
+      const balance = await signer.getBalance();
+      const balanceInEther = ethers.utils.formatEther(balance);
+
+      if (parseFloat(balanceInEther) < 0.01) { // Replace 0.01 with an appropriate gas threshold
+        alert("Insufficient TBNB balance to cover gas fees. Please top up your wallet.");
+        return;
+      }
 
       // Create contract instance
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // Call the claimTokens function
       const tx = await contract.claimTokens();
+      console.log("Transaction sent:", tx.hash);
       await tx.wait(); // Wait for the transaction to be mined
 
       alert("Tokens claimed successfully!");
@@ -53,7 +43,23 @@ const ClaimButton = () => {
     }
   };
 
-  return <button onClick={claimTokens}>Claim 100 GCCT Tokens</button>;
+  return (
+    <button
+      onClick={claimTokens}
+      style={{
+        padding: "10px 20px",
+        backgroundColor: "#28a745",
+        color: "white",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+        fontSize: "1em",
+        margin: "10px 0",
+      }}
+    >
+      Claim 100 GCCT Tokens
+    </button>
+  );
 };
 
 export default ClaimButton;
