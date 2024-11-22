@@ -1,78 +1,44 @@
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 
-export const StyledSlots = styled.div`
-  perspective: 120px;
-  user-select: none;
+// Random movement animation for slot items during spinning
+const randomMovement = keyframes`
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -10px); }
+  50% { transform: translate(-10px, 10px); }
+  75% { transform: translate(5px, -5px); }
+  100% { transform: translate(0, 0); }
+`;
+
+// Styled Slot
+export const StyledSlot = styled.div<{ $good: boolean; $spinning: boolean }>`
+  width: 70px;
+  height: 100px;
+  border: 2px solid ${({ $good }) => ($good ? '#4CAF50' : '#2d2d57')};
+  background-color: rgba(68, 68, 255, 0.1);
+  overflow: hidden;
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center; /* Center the entire slots container */
+  align-items: center;
   justify-content: center;
-
-.slots {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, auto);
-  gap: 10px;
-  padding: 10px; /* Consistent padding */
-  justify-content: center;
-  align-content: center;
-  background-color: rgba(34, 34, 34, 0.9);
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-
-
-.slotImage {
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  max-width: clamp(80px, 10vw, 120px);
-  max-height: clamp(80px, 10vw, 120px);
-  object-fit: cover;
-  border: 2px solid #333;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-  background-color: #444;
-}
 
+  ${({ $spinning }) =>
+    $spinning &&
+    css`
+      animation: ${randomMovement} 1s infinite linear;
+    `}
+`;
 
+// Flicker Image with independent animation
+export const FlickerImage = styled.img<{ $flickering: boolean }>`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 
-.slot-machine {
-    background-color: #444;
-    border: 4px solid #333;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-    width: 100%;
-    max-width: 500px; /* Limit the width on larger screens */
-    position: relative;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .slots {
-      grid-template-columns: repeat(3, 1fr); /* Keep 3 columns for mobile */
-      grid-template-rows: repeat(3, auto); /* Create 3 rows for 9 slots */
-      gap: 10px; /* Adjust gap for smaller screens */
-    }
-
-    .slotImage {
-      max-width: 100px; /* Reduce size for mobile screens */
-      max-height: 100px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .slots {
-      grid-template-columns: repeat(3, 1fr); /* Retain 3 columns for very small screens */
-      grid-template-rows: repeat(3, auto); /* 3 rows for 9 slots */
-      gap: 8px;
-      justify-content: center; /* Ensure slots are evenly distributed */
-    }
-
-    .slotImage {
-      max-width: 100px; /* Further adjust for very small screens */
-      max-height: 80px;
-    }
-  }
+  ${({ $flickering }) =>
+    $flickering &&
+    css`
+      animation: ${randomMovement} 0.6s infinite ease-in-out;
+    `}
 `;

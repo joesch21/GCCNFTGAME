@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SlotMachine from "./components/SlotMachine";
+import InstructionsModal from "./components/InstructionsModal";
 import "./App.css";
 import navbarBackground from "./assets/condortransparent.png";
 import onboard from "./utils/walletProvider"; // Import walletProvider
@@ -13,6 +14,7 @@ const App: React.FC = () => {
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
   const [approvalLoading, setApprovalLoading] = useState(false); // State for spending cap approval
   const [cooldownMessage, setCooldownMessage] = useState<string>(""); // Cooldown status message
+  const [isInstructionsVisible, setIsInstructionsVisible] = useState(false); // Modal visibility state
 
   // Function to connect to MetaMask using Web3-Onboard
   const connectWallet = async () => {
@@ -206,6 +208,23 @@ const App: React.FC = () => {
                 {connectedAccount ? "Connected" : "Connect Wallet"}
               </button>
             </li>
+            <li>
+              <button
+                onClick={() => setIsInstructionsVisible(true)}
+                style={{
+                  padding: "10px 20px",
+                  background: "linear-gradient(45deg, #ffa500, #ff4500)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "1em",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                How to Play
+              </button>
+            </li>
           </ul>
         </nav>
       </header>
@@ -245,6 +264,11 @@ const App: React.FC = () => {
       <footer>
         <p>Enjoy playing! Good luck!</p>
       </footer>
+      {/* Add Modal */}
+      <InstructionsModal
+        isVisible={isInstructionsVisible}
+        onClose={() => setIsInstructionsVisible(false)}
+      />
     </div>
   );
 };

@@ -8,9 +8,8 @@ import {
   Loader,
   StreamingSymbolsContainer,
   StreamingSymbol,
-  StyledSlot,
-  FlickerImage,
-} from './Slot.styles';
+  SlotGrid,
+} from '../components/Slot.styles';
 
 interface SlotMachineProps {
   account: string | null;
@@ -25,11 +24,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   );
   const [points, setPoints] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [depositLoading, setDepositLoading] = useState(false);
   const [depositAmount, setDepositAmount] = useState<number>(100);
   const [streamingSymbols, setStreamingSymbols] = useState<string[]>([]);
   const [streamDirection, setStreamDirection] = useState<'horizontal' | 'vertical'>('horizontal');
 
+  // Contract instances
   const tokenVault = signer
     ? new ethers.Contract(CONTRACT_ADDRESSES.TOKEN_VAULT, require('../TokenVault.json'), signer)
     : null;
@@ -38,16 +37,21 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     ? new ethers.Contract(CONTRACT_ADDRESSES.GCC_TOKEN, require('../GCCToken.json'), signer)
     : null;
 
+  // Play sound helper
   const playSound = (soundFile: string) => {
     const sound = new Audio(soundFile);
-    sound.play();
+    sound.play().catch((error) => console.error(`Failed to play sound: ${error.message}`));
   };
 
+  // Deposit tokens
   const depositTokens = async () => {
-    if (!gctToken || !tokenVault || depositAmount <= 0) return;
+    if (!gctToken || !tokenVault || depositAmount <= 0) {
+      alert('Invalid deposit amount or wallet not connected.');
+      return;
+    }
 
     try {
-      setDepositLoading(true);
+      setLoading(true);
       playSound('/money.mp3');
 
       const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
@@ -65,12 +69,16 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       console.error('Deposit failed:', error);
       alert(error.message || 'Failed to deposit tokens.');
     } finally {
-      setDepositLoading(false);
+      setLoading(false);
     }
   };
 
+  // Cash out points
   const cashOut = async () => {
-    if (!tokenVault || points <= 0) return;
+    if (!tokenVault || points <= 0) {
+      alert('No points to cash out or wallet not connected.');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -87,6 +95,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     }
   };
 
+  // Spin the slot machine
   const spinSlots = () => {
     if (spinning || points < SPIN_COST) {
       if (points < SPIN_COST) alert("You don't have enough points to spin.");
@@ -134,42 +143,53 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
 
   return (
     <div className="slot-game">
-      {(loading || depositLoading) && (
+      {/* Loading overlay */}
+      {loading && (
         <SpinnerOverlay>
           <Loader />
-          <p>{loading ? 'Processing Cash Out...' : 'Processing Deposit...'}</p>
+          <p>Processing...</p>
         </SpinnerOverlay>
       )}
+
+      {/* Scoreboard */}
       <div className="score-board">
         <h2>Points: {points}</h2>
       </div>
-      <input
-        type="number"
-        value={depositAmount}
-        onChange={(e) => setDepositAmount(Number(e.target.value))}
-        disabled={depositLoading}
-      />
-      <button onClick={depositTokens} disabled={depositLoading || depositAmount <= 0}>
-        {depositLoading ? 'Depositing GCCT...' : `Deposit ${depositAmount} Tokens`}
-      </button>
-      <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
-        {spinning ? 'Spinning NOW...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
-      </button>
-      <button onClick={cashOut} disabled={loading || points === 0}>
-        {loading ? 'Processing Cash Out...' : 'Cash Out'}
-      </button>
-      <div className="slots">
+
+      {/* Slot grid */}
+      <SlotGrid>
         {displayedCombination.map((item, index) => (
           <SlotItem
             key={index}
+            spinning={spinning}
             revealed={!spinning}
-            spinning={spinning} // Pass spinning state to SlotItem
             good={item.good || false}
             itemImage={item.image}
           />
         ))}
+      </SlotGrid>
+
+      {/* Controls */}
+      <div className="controls">
+        <input
+          type="number"
+          value={depositAmount}
+          onChange={(e) => setDepositAmount(Number(e.target.value))}
+          disabled={loading}
+          placeholder="Deposit Amount"
+        />
+        <button onClick={depositTokens} disabled={loading || depositAmount <= 0}>
+          Deposit {depositAmount} Tokens
+        </button>
+        <button onClick={spinSlots} disabled={spinning || points < SPIN_COST}>
+          {spinning ? 'Spinning...' : `Spin (Cost: ${SPIN_COST} GCCT)`}
+        </button>
+        <button onClick={cashOut} disabled={loading || points === 0}>
+          Cash Out
+        </button>
       </div>
 
+      {/* Streaming symbols for winning spins */}
       {streamingSymbols.length > 0 && (
         <StreamingSymbolsContainer>
           {streamingSymbols.map((symbol, index) => (
