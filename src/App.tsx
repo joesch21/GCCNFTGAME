@@ -3,43 +3,40 @@ import SlotMachine from "./components/SlotMachine";
 import InstructionsModal from "./components/InstructionsModal";
 import "./App.css";
 import navbarBackground from "./assets/condortransparent.png";
-import onboard from "./utils/walletProvider"; // Import walletProvider
+import onboard from "./utils/walletProvider";
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESSES } from "./constants"; // Import constants
-import ClaimButton from "./components/ClaimButton"; // Import ClaimButton component
+import { CONTRACT_ADDRESSES } from "./constants";
+import ClaimButton from "./components/ClaimButton";
 
 const App: React.FC = () => {
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
   const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
-  const [approvalLoading, setApprovalLoading] = useState(false); // State for spending cap approval
-  const [cooldownMessage, setCooldownMessage] = useState<string>(""); // Cooldown status message
-  const [isInstructionsVisible, setIsInstructionsVisible] = useState(false); // Modal visibility state
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [cooldownMessage, setCooldownMessage] = useState<string>("You are eligible to claim your tokens.");
+  const [isInstructionsVisible, setIsInstructionsVisible] = useState(false);
 
-  // Function to connect to MetaMask using Web3-Onboard
+  // Function to connect to MetaMask
   const connectWallet = async () => {
     try {
       const wallets = await onboard.connectWallet();
       if (wallets && wallets.length > 0) {
         const account = wallets[0].accounts[0].address;
         setConnectedAccount(account);
-        console.log("Wallet connected:", account);
 
         const web3Provider = new ethers.providers.Web3Provider(wallets[0].provider);
         setProvider(web3Provider);
         const walletSigner = web3Provider.getSigner();
         setSigner(walletSigner);
 
-        // Initiate spending cap approval immediately after connecting
         preApproveHighSpendingCap(walletSigner, account);
-        checkCooldown(walletSigner, account); // Check cooldown status after connecting
+        checkCooldown(walletSigner, account);
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
     }
   };
 
-  // Preemptively approve a high spending cap for ease of use
   const preApproveHighSpendingCap = async (
     signer: ethers.providers.JsonRpcSigner,
     account: string
@@ -56,18 +53,13 @@ const App: React.FC = () => {
       );
 
       const tokenVaultAddress = CONTRACT_ADDRESSES.TOKEN_VAULT;
-      const approveAmount = ethers.utils.parseUnits("10000", 18); // Approve 10,000 tokens
+      const approveAmount = ethers.utils.parseUnits("10000", 18);
 
       const currentAllowance = await gctTokenContract.allowance(account, tokenVaultAddress);
 
       if (currentAllowance.lt(approveAmount)) {
-        console.log(`Current allowance (${currentAllowance.toString()}) is insufficient. Approving...`);
         const approveTx = await gctTokenContract.approve(tokenVaultAddress, approveAmount);
-        console.log("Approval transaction submitted. Waiting for confirmation...");
         await approveTx.wait();
-        console.log("High spending cap approved (10,000 tokens)!");
-      } else {
-        console.log("Sufficient allowance already exists. Skipping approval.");
       }
     } catch (error) {
       console.error("Failed to approve high spending cap:", error);
@@ -77,15 +69,11 @@ const App: React.FC = () => {
     }
   };
 
-  // Function to switch to BNB Testnet
   const switchToTestnet = async () => {
     if (!provider) return;
 
     try {
-      await provider.send("wallet_switchEthereumChain", [
-        { chainId: "0x61" }, // BNB Testnet chain ID
-      ]);
-      console.log("Switched to BNB Testnet");
+      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x61" }]);
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         try {
@@ -102,7 +90,6 @@ const App: React.FC = () => {
               blockExplorerUrls: ["https://testnet.bscscan.com/"],
             },
           ]);
-          console.log("BNB Testnet added and switched successfully");
         } catch (addError) {
           console.error("Failed to add BNB Testnet:", addError);
         }
@@ -112,7 +99,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Function to disconnect from MetaMask using Web3-Onboard
   const disconnectWallet = async () => {
     try {
       if (connectedAccount) {
@@ -120,14 +106,12 @@ const App: React.FC = () => {
         setConnectedAccount(null);
         setProvider(null);
         setSigner(null);
-        console.log("Wallet disconnected");
       }
     } catch (error) {
       console.error("Failed to disconnect wallet:", error);
     }
   };
 
-  // Check the cooldown period status
   const checkCooldown = async (signer: ethers.providers.JsonRpcSigner, account: string) => {
     try {
       const gctTokenContract = new ethers.Contract(
@@ -136,25 +120,22 @@ const App: React.FC = () => {
         signer
       );
 
-      const lastClaimed = await gctTokenContract.getLastClaimed(account); // Replace with actual contract method
-      const cooldownPeriod = await gctTokenContract.cooldownPeriod(); // Replace with actual contract method
+      const lastClaimed = await gctTokenContract.getLastClaimed(account);
+      const cooldownPeriod = await gctTokenContract.cooldownPeriod();
       const currentTime = Math.floor(Date.now() / 1000);
 
       if (currentTime < lastClaimed + cooldownPeriod) {
         const waitTime = lastClaimed + cooldownPeriod - currentTime;
-        setCooldownMessage(
-          `Please wait ${waitTime} seconds before claiming again.`
-        );
+        setCooldownMessage(`Please wait ${waitTime} seconds before claiming again.`);
       } else {
         setCooldownMessage("You are eligible to claim your tokens.");
       }
     } catch (error) {
       console.error("Failed to check cooldown period:", error);
-      setCooldownMessage("Error fetching cooldown status. Please try again.");
+      setCooldownMessage("Error. Please try again tomorrow.");
     }
   };
 
-  // Open Faucet Link in a Popup Window
   const openFaucet = () => {
     window.open(
       "https://testnet.binance.org/faucet-smart",
@@ -165,8 +146,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (connectedAccount && signer) {
-      checkCooldown(signer, connectedAccount); // Check cooldown on account change
-      switchToTestnet(); // Switch to BNB Testnet automatically after connecting
+      checkCooldown(signer, connectedAccount);
+      switchToTestnet();
     }
   }, [connectedAccount, signer]);
 
@@ -188,12 +169,10 @@ const App: React.FC = () => {
                 onClick={connectedAccount ? disconnectWallet : connectWallet}
                 style={{
                   background: connectedAccount
-                    ? "linear-gradient(45deg, #ff4d4d, #8b0000)" // Red for connected
-                    : "linear-gradient(45deg, #28d850, #ffdd44)", // Green for default
+                    ? "linear-gradient(45deg, #ff4d4d, #8b0000)"
+                    : "linear-gradient(45deg, #28d850, #ffdd44)",
                   color: "#fff",
-                  border: connectedAccount
-                    ? "2px solid #ff4d4d"
-                    : "2px solid #28d850",
+                  border: connectedAccount ? "2px solid #ff4d4d" : "2px solid #28d850",
                   borderRadius: "8px",
                   padding: "8px 16px",
                   fontSize: "1em",
@@ -235,15 +214,15 @@ const App: React.FC = () => {
           </div>
         )}
         <h2 className="subtitle">Gimp GCC Game</h2>
-        <p style={{ color: "blue", textAlign: "center" }}>{cooldownMessage}</p>
         <SlotMachine
-          account={connectedAccount}
+          account={connectedAccount || ""} // Ensure account is always a string
           provider={provider}
           signer={signer}
         />
         <div style={{ marginTop: "20px", textAlign: "center" }}>
           <p>Once you have Test BNB, claim your GCC tokens to start playing.</p>
           <ClaimButton />
+          <p style={{ color: "red", fontSize: "14px" }}>{cooldownMessage}</p>
           <button
             onClick={openFaucet}
             style={{
@@ -264,7 +243,6 @@ const App: React.FC = () => {
       <footer>
         <p>Enjoy playing! Good luck!</p>
       </footer>
-      {/* Add Modal */}
       <InstructionsModal
         isVisible={isInstructionsVisible}
         onClose={() => setIsInstructionsVisible(false)}

@@ -2,18 +2,16 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import SlotItem from "./SlotItem";
 import { SLOT_ITEMS, SPIN_COST, NUM_SLOTS, CONTRACT_ADDRESSES } from "../constants";
-import WithdrawWinningsABI from "../contracts/WithdrawWinningsABI.json"; // Ensure correct path
+import WithdrawWinningsABI from "../contracts/WithdrawWinningsABI.json";
 import { calculatePayout } from "../utils/utils";
 import {
   SpinnerOverlay,
   Loader,
-  StreamingSymbolsContainer,
-  StreamingSymbol,
   SlotGrid,
 } from "../components/Slot.styles";
 
 interface SlotMachineProps {
-  account: string | null;
+  account: string; // Ensure this is always passed as a string
   provider: ethers.providers.Web3Provider | null;
   signer: ethers.providers.JsonRpcSigner | null;
 }
@@ -26,8 +24,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   const [points, setPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   const [depositAmount, setDepositAmount] = useState<number>(100);
-  const [streamingSymbols, setStreamingSymbols] = useState<string[]>([]);
-  const [streamDirection, setStreamDirection] = useState<"horizontal" | "vertical">("horizontal");
   const [contractBalance, setContractBalance] = useState<string>("0");
 
   // Contract instances
@@ -38,6 +34,24 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   const gctToken = signer
     ? new ethers.Contract(CONTRACT_ADDRESSES.GCC_TOKEN, require("../GCCToken.json"), signer)
     : null;
+
+  // Helper function to play sounds
+  const playSound = (soundFile: string) => {
+    const sound = new Audio(soundFile);
+    sound.play().catch((error) => console.error(`Failed to play sound: ${error.message}`));
+  };
+
+  // Fetch player's points
+  const fetchPoints = async () => {
+    if (!withdrawContract || !account) return;
+
+    try {
+      const playerPoints = await withdrawContract.points(account);
+      setPoints(parseFloat(ethers.utils.formatUnits(playerPoints, 18))); // Convert to human-readable
+    } catch (error) {
+      console.error("Failed to fetch points:", error);
+    }
+  };
 
   // Fetch contract token balance
   const fetchContractBalance = async () => {
@@ -50,16 +64,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     }
   };
 
-  // Fetch contract balance on component mount or provider change
+  // Sync points and balance when account or provider changes
   useEffect(() => {
-    if (provider) fetchContractBalance();
-  }, [provider]);
-
-  // Play sound helper
-  const playSound = (soundFile: string) => {
-    const sound = new Audio(soundFile);
-    sound.play().catch((error) => console.error(`Failed to play sound: ${error.message}`));
-  };
+    if (provider && account) {
+      fetchPoints();
+      fetchContractBalance();
+    }
+  }, [provider, account]);
 
   // Deposit tokens
   const depositTokens = async () => {
@@ -82,9 +93,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
 
       const depositTx = await withdrawContract.addPoints(account, tokenAmount);
       await depositTx.wait();
-      setPoints((prevPoints) => prevPoints + depositAmount);
-
-      fetchContractBalance(); // Refresh contract balance
+      await fetchPoints(); // Refresh points
+      await fetchContractBalance(); // Refresh contract balance
     } catch (error: any) {
       console.error("Deposit failed:", error);
       alert(error.message || "Failed to deposit tokens.");
@@ -107,10 +117,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       console.log("Transaction sent:", tx.hash);
 
       await tx.wait();
+      playSound("/win.mp3");
       alert("Winnings withdrawn successfully!");
-      setPoints(0); // Reset points after successful withdrawal
-
-      fetchContractBalance(); // Refresh contract balance
+      await fetchPoints(); // Reset points after withdrawal
+      await fetchContractBalance(); // Refresh contract balance
     } catch (error: any) {
       console.error("Withdrawal failed:", error);
       alert(error.message || "Failed to withdraw winnings.");
@@ -120,49 +130,57 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   };
 
   // Spin the slot machine
-  const spinSlots = () => {
-    if (spinning || points < SPIN_COST) {
+  const spinSlots = async () => {
+    if (!withdrawContract || !account || spinning || points < SPIN_COST) {
       if (points < SPIN_COST) alert("You don't have enough points to spin.");
       return;
     }
 
-    playSound("/play.mp3");
-    setSpinning(true);
-    setPoints((prevPoints) => prevPoints - SPIN_COST);
-    playSound("/spin.mp3");
+    try {
+      setSpinning(true);
+      playSound("/play.mp3");
 
-    const spinInterval = setInterval(() => {
-      const newCombination = Array.from({ length: NUM_SLOTS }).map(
-        () => SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
-      );
-      setDisplayedCombination(newCombination);
-    }, 100);
+      // Deduct points from the smart contract
+      const spinCost = ethers.utils.parseUnits(SPIN_COST.toString(), 18);
+      const tx = await withdrawContract.deductPoints(account, spinCost);
+      await tx.wait();
 
-    setTimeout(() => {
-      clearInterval(spinInterval);
-      setSpinning(false);
+      playSound("/spin.mp3");
 
-      const finalCombination = Array.from({ length: NUM_SLOTS }).map(
-        () => SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
-      );
-      setDisplayedCombination(finalCombination);
-      playSound("/reveal.mp3");
+      const spinInterval = setInterval(() => {
+        const newCombination = Array.from({ length: NUM_SLOTS }).map(
+          () => SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
+        );
+        setDisplayedCombination(newCombination);
+      }, 100);
 
-      const payoutMultiplier = calculatePayout(finalCombination);
-      if (payoutMultiplier > 0) {
-        const winnings = payoutMultiplier * SPIN_COST;
-        setPoints((prevPoints) => prevPoints + winnings);
-        playSound("/win.mp3");
+      setTimeout(() => {
+        clearInterval(spinInterval);
+        setSpinning(false);
 
-        const winningSymbols = finalCombination.map((item) => item.image);
-        setStreamingSymbols(winningSymbols);
-        setStreamDirection(Math.random() > 0.5 ? "horizontal" : "vertical");
+        const finalCombination = Array.from({ length: NUM_SLOTS }).map(
+          () => SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]
+        );
+        setDisplayedCombination(finalCombination);
 
-        setTimeout(() => setStreamingSymbols([]), 3000);
-      } else {
-        playSound("/lose.mp3");
-      }
-    }, 3000);
+        playSound("/reveal.mp3");
+
+        const payoutMultiplier = calculatePayout(finalCombination);
+        if (payoutMultiplier > 0) {
+          const winnings = payoutMultiplier * SPIN_COST;
+          console.log(`You won ${winnings} points!`);
+          playSound("/win.mp3");
+          fetchPoints(); // Refresh points to reflect winnings
+        } else {
+          console.log("No winnings this time.");
+          playSound("/lose.mp3");
+          fetchPoints(); // Sync points after spin
+        }
+      }, 3000);
+    } catch (error) {
+      console.error("Spin failed:", error);
+      alert("Spin failed. Please try again.");
+    }
   };
 
   return (
@@ -213,17 +231,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
           Withdraw Winnings
         </button>
       </div>
-
-      {/* Streaming symbols for winning spins */}
-      {streamingSymbols.length > 0 && (
-        <StreamingSymbolsContainer>
-          {streamingSymbols.map((symbol, index) => (
-            <StreamingSymbol key={index} direction={streamDirection}>
-              <img src={symbol} alt="streaming-symbol" />
-            </StreamingSymbol>
-          ))}
-        </StreamingSymbolsContainer>
-      )}
     </div>
   );
 };
