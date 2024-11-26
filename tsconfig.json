@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "es2020", // Updated to support modern JavaScript features
+    "lib": ["dom", "dom.iterable", "es2020"], // Match the target
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

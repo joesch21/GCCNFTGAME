@@ -1,16 +1,20 @@
 import React, { useState } from "react";
-import { ethers, Contract } from "ethers";
-import contractABI from "../contracts/contractABI.json"; // Adjust the path as necessary
+import { ethers, BrowserProvider, Contract } from "ethers";
+import contractABI from "../contracts/contractABI.json"; // Adjust path as needed
 
-const contractAddress = "0xb4a96eba881c1e06a80b68c3bf22bc6c934dfc6a"; // Replace with your contract's address
+const contractAddress = "0xb4a96eba881c1e06a80b68c3bf22bc6c934dfc6a"; // Replace with your contract address
 
-const ClaimButton = () => {
+const ClaimButton: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const claimTokens = async () => {
     if (isProcessing) return;
 
-    if (typeof window.ethereum === "undefined") {
+    // Ensure `window.ethereum` exists
+    const ethereum = window.ethereum as typeof window.ethereum & {
+      request: (args: { method: string; params?: Array<any> }) => Promise<any>;
+    };
+    if (!ethereum) {
       alert("MetaMask is not installed. Please install it to use this feature.");
       return;
     }
@@ -19,27 +23,17 @@ const ClaimButton = () => {
       setIsProcessing(true);
 
       // Request account access
-      await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+      const account = accounts[0];
 
-      // Create an ethers provider
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      // Create ethers provider using `window.ethereum`
+      const provider = new BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
 
-      // Check network
+      // Check the connected network
       const network = await provider.getNetwork();
-      if (network.chainId !== 97) { // 97 = Binance Smart Chain Testnet
+      if (network.chainId !== BigInt(97)) { // Compare against BigInt `97n`
         alert("Please connect to Binance Smart Chain Testnet.");
-        return;
-      }
-
-      // Check TBNB balance
-      const balance = await signer.getBalance();
-      const gasPrice = await provider.getGasPrice();
-      const estimatedGas = ethers.BigNumber.from("21000");
-      const requiredGas = ethers.utils.formatEther(gasPrice.mul(estimatedGas));
-
-      if (balance.lt(gasPrice.mul(estimatedGas))) {
-        alert(`Insufficient TBNB balance. You need at least ${requiredGas} TBNB to cover gas fees.`);
         return;
       }
 
@@ -52,9 +46,8 @@ const ClaimButton = () => {
       await tx.wait(); // Wait for the transaction to be mined
 
       alert("Tokens claimed successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error claiming tokens:", error);
-
       if (error.code === 4001) {
         alert("Transaction rejected by the user.");
       } else {

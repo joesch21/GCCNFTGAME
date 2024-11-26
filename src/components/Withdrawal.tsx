@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { Contract, formatUnits } from "ethers";
 import WithdrawWinningsABI from "../contracts/WithdrawWinningsABI.json";
 
 interface WithdrawalProps {
-  signer: ethers.Signer | null;
+  signer: any | null; // Signer type for compatibility with Ethers.js v6
   account: string; // Ensure account is always passed as a string
 }
 
@@ -18,13 +18,13 @@ const Withdrawal: React.FC<WithdrawalProps> = ({ signer, account }) => {
     if (!signer || !account) return;
 
     try {
-      const withdrawWinningsContract = new ethers.Contract(
+      const withdrawWinningsContract = new Contract(
         CONTRACT_ADDRESS,
         WithdrawWinningsABI,
         signer
       );
       const points = await withdrawWinningsContract.points(account);
-      setPlayerPoints(parseFloat(ethers.utils.formatUnits(points, 18))); // Convert from wei to human-readable
+      setPlayerPoints(parseFloat(formatUnits(points, 18))); // Convert from wei to human-readable
     } catch (error) {
       console.error("Failed to fetch player points:", error);
     }
@@ -45,7 +45,7 @@ const Withdrawal: React.FC<WithdrawalProps> = ({ signer, account }) => {
     try {
       setIsProcessing(true);
 
-      const withdrawWinningsContract = new ethers.Contract(
+      const withdrawWinningsContract = new Contract(
         CONTRACT_ADDRESS,
         WithdrawWinningsABI,
         signer
@@ -59,7 +59,7 @@ const Withdrawal: React.FC<WithdrawalProps> = ({ signer, account }) => {
 
       // Reset points and refresh
       setPlayerPoints(0);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error withdrawing winnings:", error);
       alert("Failed to withdraw winnings. Please try again.");
     } finally {

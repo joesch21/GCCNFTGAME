@@ -1,25 +1,61 @@
-import { ethers } from 'ethers';
+import { Contract, BigNumberish, Wallet, TransactionResponse } from "ethers";
 
-export const getTokenVaultContract = (address: string, abi: any, signer: ethers.Signer) => {
-  return new ethers.Contract(address, abi, signer);
+// Function to get the token vault contract instance
+export const getTokenVaultContract = (address: string, abi: any, signer: Wallet) => {
+  return new Contract(address, abi, signer);
 };
 
-export const getAllowance = async (token: ethers.Contract, owner: string, spender: string) => {
-  return await token.allowance(owner, spender);
+// Fetches the allowance of tokens
+export const getAllowance = async (
+  token: Contract,
+  owner: string,
+  spender: string
+): Promise<BigNumberish> => {
+  try {
+    return await token.allowance(owner, spender);
+  } catch (error) {
+    console.error("Failed to fetch allowance:", error);
+    throw error;
+  }
 };
 
-export const approveToken = async (token: ethers.Contract, spender: string, amount: ethers.BigNumber) => {
-  const tx = await token.approve(spender, amount);
-  await tx.wait();
-  return tx;
+// Approves a spender to use a specific amount of tokens
+export const approveToken = async (
+  token: Contract,
+  spender: string,
+  amount: BigNumberish
+): Promise<TransactionResponse> => {
+  try {
+    const tx = await token.approve(spender, amount);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error("Failed to approve tokens:", error);
+    throw error;
+  }
 };
 
-export const depositTokens = async (vault: ethers.Contract, amount: ethers.BigNumber) => {
-  const tx = await vault.deposit(amount);
-  await tx.wait();
-  return tx;
+// Deposits tokens into a vault
+export const depositTokens = async (
+  vault: Contract,
+  amount: BigNumberish
+): Promise<TransactionResponse> => {
+  try {
+    const tx = await vault.deposit(amount);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error("Failed to deposit tokens:", error);
+    throw error;
+  }
 };
 
-export const getBalance = async (vault: ethers.Contract, address: string) => {
-  return await vault.balances(address);
+// Fetches the token balance of a given address
+export const getBalance = async (vault: Contract, address: string): Promise<BigNumberish> => {
+  try {
+    return await vault.balanceOf(address);
+  } catch (error) {
+    console.error("Failed to fetch balance:", error);
+    throw error;
+  }
 };

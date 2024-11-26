@@ -8,8 +8,8 @@ import { SpinnerOverlay, Loader, SlotGrid } from "../components/Slot.styles";
 
 interface SlotMachineProps {
   account: string;
-  provider: ethers.providers.Web3Provider | null;
-  signer: ethers.providers.JsonRpcSigner | null;
+  provider: ethers.BrowserProvider | null;
+  signer: ethers.JsonRpcSigner | null;
 }
 
 const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) => {
@@ -41,7 +41,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     if (!withdrawContract || !account) return;
     try {
       const playerPoints = await withdrawContract.points(account);
-      setPoints(parseFloat(ethers.utils.formatUnits(playerPoints, 18)));
+      setPoints(parseFloat(ethers.formatUnits(playerPoints, 18)));
     } catch (error) {
       console.error("Failed to fetch points:", error);
     }
@@ -52,7 +52,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     if (!gctToken) return;
     try {
       const balance = await gctToken.balanceOf(CONTRACT_ADDRESSES.WITHDRAWAL);
-      setContractBalance(ethers.utils.formatUnits(balance, 18));
+      setContractBalance(ethers.formatUnits(balance, 18));
     } catch (error) {
       console.error("Failed to fetch contract balance:", error);
     }
@@ -74,16 +74,16 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       setLoading(true);
       playSound("/money.mp3");
 
-      const tokenAmount = ethers.utils.parseUnits(depositAmount.toString(), 18);
+      const tokenAmount = ethers.parseUnits(depositAmount.toString(), 18);
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.WITHDRAWAL);
 
-      if (currentAllowance.lt(tokenAmount)) {
+      if (currentAllowance < tokenAmount) {
         const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.WITHDRAWAL, tokenAmount);
         await approveTx.wait();
       }
 
       const depositTx = await withdrawContract.addPoints(account, tokenAmount, {
-        gasLimit: 300000, // Set manual gas limit
+        gasLimit: 300000,
       });
       await depositTx.wait();
       fetchPoints();
@@ -127,9 +127,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       setSpinning(true);
       playSound("/play.mp3");
 
-      const spinCost = ethers.utils.parseUnits(SPIN_COST.toString(), 18);
+      const spinCost = ethers.parseUnits(SPIN_COST.toString(), 18);
       const tx = await withdrawContract.deductPoints(account, spinCost, {
-        gasLimit: 300000, // Set manual gas limit
+        gasLimit: 300000,
       });
       await tx.wait();
 
@@ -182,17 +182,16 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         <h3>Prize Pool: {contractBalance} GCCT</h3>
       </div>
       <SlotGrid>
-  {displayedCombination.map((item, index) => (
-    <SlotItem
-      key={index}
-      spinning={spinning}
-      revealed={!spinning}
-      good={item.good || false} // Default to false if `item.good` is undefined
-      itemImage={item.image}
-    />
-  ))}
-</SlotGrid>
-
+        {displayedCombination.map((item, index) => (
+          <SlotItem
+            key={index}
+            spinning={spinning}
+            revealed={!spinning}
+            good={item.good || false}
+            itemImage={item.image}
+          />
+        ))}
+      </SlotGrid>
       <div className="controls">
         <input
           type="number"

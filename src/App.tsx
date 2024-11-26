@@ -4,16 +4,24 @@ import InstructionsModal from "./components/InstructionsModal";
 import "./App.css";
 import navbarBackground from "./assets/condortransparent.png";
 import onboard from "./utils/walletProvider";
-import { ethers } from "ethers";
+import {
+  BrowserProvider,
+  Contract,
+  formatUnits,
+  parseUnits,
+  toQuantity,
+} from "ethers";
 import { CONTRACT_ADDRESSES } from "./constants";
 import ClaimButton from "./components/ClaimButton";
 
 const App: React.FC = () => {
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
-  const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
+  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<any | null>(null);
   const [approvalLoading, setApprovalLoading] = useState(false);
-  const [cooldownMessage, setCooldownMessage] = useState<string>("You are eligible to claim your tokens.");
+  const [cooldownMessage, setCooldownMessage] = useState<string>(
+    "You are eligible to claim your tokens."
+  );
   const [isInstructionsVisible, setIsInstructionsVisible] = useState(false);
 
   // Function to connect to MetaMask
@@ -24,41 +32,44 @@ const App: React.FC = () => {
         const account = wallets[0].accounts[0].address;
         setConnectedAccount(account);
 
-        const web3Provider = new ethers.providers.Web3Provider(wallets[0].provider);
+        const web3Provider = new BrowserProvider(wallets[0].provider);
         setProvider(web3Provider);
-        const walletSigner = web3Provider.getSigner();
+        const walletSigner = await web3Provider.getSigner();
         setSigner(walletSigner);
 
-        preApproveHighSpendingCap(walletSigner, account);
-        checkCooldown(walletSigner, account);
+        await preApproveHighSpendingCap(walletSigner, account);
+        await checkCooldown(walletSigner, account);
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
     }
   };
 
-  const preApproveHighSpendingCap = async (
-    signer: ethers.providers.JsonRpcSigner,
-    account: string
-  ) => {
+  const preApproveHighSpendingCap = async (signer: any, account: string) => {
     if (!signer) return;
 
     try {
       setApprovalLoading(true);
 
-      const gctTokenContract = new ethers.Contract(
+      const gctTokenContract = new Contract(
         CONTRACT_ADDRESSES.GCC_TOKEN,
         require("./GCCToken.json"),
         signer
       );
 
       const tokenVaultAddress = CONTRACT_ADDRESSES.TOKEN_VAULT;
-      const approveAmount = ethers.utils.parseUnits("10000", 18);
+      const approveAmount = parseUnits("10000", 18);
 
-      const currentAllowance = await gctTokenContract.allowance(account, tokenVaultAddress);
+      const currentAllowance = await gctTokenContract.allowance(
+        account,
+        tokenVaultAddress
+      );
 
-      if (currentAllowance.lt(approveAmount)) {
-        const approveTx = await gctTokenContract.approve(tokenVaultAddress, approveAmount);
+      if (currentAllowance < approveAmount) {
+        const approveTx = await gctTokenContract.approve(
+          tokenVaultAddress,
+          approveAmount
+        );
         await approveTx.wait();
       }
     } catch (error) {
@@ -112,9 +123,9 @@ const App: React.FC = () => {
     }
   };
 
-  const checkCooldown = async (signer: ethers.providers.JsonRpcSigner, account: string) => {
+  const checkCooldown = async (signer: any, account: string) => {
     try {
-      const gctTokenContract = new ethers.Contract(
+      const gctTokenContract = new Contract(
         CONTRACT_ADDRESSES.GCC_TOKEN,
         require("./GCCToken.json"),
         signer
@@ -126,7 +137,9 @@ const App: React.FC = () => {
 
       if (currentTime < lastClaimed + cooldownPeriod) {
         const waitTime = lastClaimed + cooldownPeriod - currentTime;
-        setCooldownMessage(`Please wait ${waitTime} seconds before claiming again.`);
+        setCooldownMessage(
+          `Please wait ${waitTime} seconds before claiming again.`
+        );
       } else {
         setCooldownMessage("You are eligible to claim your tokens.");
       }
@@ -172,7 +185,9 @@ const App: React.FC = () => {
                     ? "linear-gradient(45deg, #ff4d4d, #8b0000)"
                     : "linear-gradient(45deg, #28d850, #ffdd44)",
                   color: "#fff",
-                  border: connectedAccount ? "2px solid #ff4d4d" : "2px solid #28d850",
+                  border: connectedAccount
+                    ? "2px solid #ff4d4d"
+                    : "2px solid #28d850",
                   borderRadius: "8px",
                   padding: "8px 16px",
                   fontSize: "1em",
