@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { BrowserProvider, Contract, formatUnits, parseUnits } from "ethers";
 import SlotItem from "./SlotItem";
 import { SLOT_ITEMS, SPIN_COST, NUM_SLOTS, CONTRACT_ADDRESSES } from "../constants";
 import WithdrawWinningsABI from "../contracts/WithdrawWinningsABI.json";
@@ -8,8 +8,8 @@ import { SpinnerOverlay, Loader, SlotGrid } from "../components/Slot.styles";
 
 interface SlotMachineProps {
   account: string;
-  provider: ethers.BrowserProvider | null;
-  signer: ethers.JsonRpcSigner | null;
+  provider: BrowserProvider | null;
+  signer: any | null;
 }
 
 const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) => {
@@ -23,36 +23,33 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
   const [contractBalance, setContractBalance] = useState<string>("0");
 
   const withdrawContract = signer
-    ? new ethers.Contract(CONTRACT_ADDRESSES.WITHDRAWAL, WithdrawWinningsABI, signer)
+    ? new Contract(CONTRACT_ADDRESSES.WITHDRAWAL, WithdrawWinningsABI, signer)
     : null;
 
   const gctToken = signer
-    ? new ethers.Contract(CONTRACT_ADDRESSES.GCC_TOKEN, require("../GCCToken.json"), signer)
+    ? new Contract(CONTRACT_ADDRESSES.GCC_TOKEN, require("../GCCToken.json"), signer)
     : null;
 
-  // Helper function to play sounds
   const playSound = (soundFile: string) => {
     const sound = new Audio(soundFile);
     sound.play().catch((error) => console.error(`Failed to play sound: ${error.message}`));
   };
 
-  // Fetch player's points
   const fetchPoints = async () => {
     if (!withdrawContract || !account) return;
     try {
       const playerPoints = await withdrawContract.points(account);
-      setPoints(parseFloat(ethers.formatUnits(playerPoints, 18)));
+      setPoints(parseFloat(formatUnits(playerPoints, 18)));
     } catch (error) {
       console.error("Failed to fetch points:", error);
     }
   };
 
-  // Fetch contract token balance
   const fetchContractBalance = async () => {
     if (!gctToken) return;
     try {
       const balance = await gctToken.balanceOf(CONTRACT_ADDRESSES.WITHDRAWAL);
-      setContractBalance(ethers.formatUnits(balance, 18));
+      setContractBalance(formatUnits(balance, 18));
     } catch (error) {
       console.error("Failed to fetch contract balance:", error);
     }
@@ -74,10 +71,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       setLoading(true);
       playSound("/money.mp3");
 
-      const tokenAmount = ethers.parseUnits(depositAmount.toString(), 18);
+      const tokenAmount = parseUnits(depositAmount.toString(), 18);
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.WITHDRAWAL);
 
-      if (currentAllowance < tokenAmount) {
+      if (currentAllowance.lt(tokenAmount)) {
         const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.WITHDRAWAL, tokenAmount);
         await approveTx.wait();
       }
@@ -127,7 +124,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       setSpinning(true);
       playSound("/play.mp3");
 
-      const spinCost = ethers.parseUnits(SPIN_COST.toString(), 18);
+      const spinCost = parseUnits(SPIN_COST.toString(), 18);
       const tx = await withdrawContract.deductPoints(account, spinCost, {
         gasLimit: 300000,
       });
