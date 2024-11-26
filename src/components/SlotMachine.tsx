@@ -74,8 +74,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       const tokenAmount = parseUnits(depositAmount.toString(), 18);
       const currentAllowance = await gctToken.allowance(account, CONTRACT_ADDRESSES.WITHDRAWAL);
 
-      if (currentAllowance.lt(tokenAmount)) {
-        const approveTx = await gctToken.approve(CONTRACT_ADDRESSES.WITHDRAWAL, tokenAmount);
+      if (BigInt(currentAllowance) < BigInt(tokenAmount)) {
+        const approveTx = await gctToken.approve(
+          CONTRACT_ADDRESSES.WITHDRAWAL,
+          tokenAmount.toString()
+        );
         await approveTx.wait();
       }
 
@@ -83,6 +86,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         gasLimit: 300000,
       });
       await depositTx.wait();
+
       fetchPoints();
       fetchContractBalance();
       alert("Deposit successful!");
@@ -101,7 +105,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
     }
     try {
       setLoading(true);
-      const tx = await withdrawContract.withdrawWinnings();
+      const tx = await withdrawContract.withdrawWinnings({ gasLimit: 300000 });
       await tx.wait();
       playSound("/win.mp3");
       alert("Winnings withdrawn successfully!");
@@ -125,9 +129,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
       playSound("/play.mp3");
 
       const spinCost = parseUnits(SPIN_COST.toString(), 18);
-      const tx = await withdrawContract.deductPoints(account, spinCost, {
-        gasLimit: 300000,
-      });
+      const tx = await withdrawContract.deductPoints(account, spinCost, { gasLimit: 300000 });
       await tx.wait();
 
       playSound("/spin.mp3");
@@ -150,7 +152,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ account, provider, signer }) 
         playSound("/reveal.mp3");
         const payoutMultiplier = calculatePayout(finalCombination);
         if (payoutMultiplier > 0) {
-          const winnings = payoutMultiplier * SPIN_COST;
+          const winnings = parseFloat(formatUnits(BigInt(payoutMultiplier) * BigInt(SPIN_COST), 18));
           alert(`You won ${winnings} points!`);
           playSound("/win.mp3");
           fetchPoints();
