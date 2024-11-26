@@ -53,16 +53,10 @@ const App: React.FC = () => {
       const tokenVaultAddress = CONTRACT_ADDRESSES.TOKEN_VAULT;
       const approveAmount = parseUnits("10000", 18);
 
-      const currentAllowance = await gctTokenContract.allowance(
-        account,
-        tokenVaultAddress
-      );
+      const currentAllowance = await gctTokenContract.allowance(account, tokenVaultAddress);
 
-      if (currentAllowance.lt(approveAmount)) {
-        const approveTx = await gctTokenContract.approve(
-          tokenVaultAddress,
-          approveAmount
-        );
+      if (BigInt(currentAllowance) < BigInt(approveAmount)) {
+        const approveTx = await gctTokenContract.approve(tokenVaultAddress, approveAmount);
         await approveTx.wait();
       }
     } catch (error) {
@@ -86,8 +80,8 @@ const App: React.FC = () => {
       const cooldownPeriod = await gctTokenContract.cooldownPeriod();
       const currentTime = Math.floor(Date.now() / 1000);
 
-      if (currentTime < lastClaimed + cooldownPeriod) {
-        const waitTime = lastClaimed + cooldownPeriod - currentTime;
+      if (currentTime < Number(lastClaimed) + Number(cooldownPeriod)) {
+        const waitTime = Number(lastClaimed) + Number(cooldownPeriod) - currentTime;
         setCooldownMessage(`Please wait ${waitTime} seconds before claiming again.`);
       } else {
         setCooldownMessage("You are eligible to claim your tokens.");
